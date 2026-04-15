@@ -1,0 +1,18 @@
+import { Router } from "express";
+import { IRoute } from "../interfaces";
+import { TutorProfileRouters } from "../modules/TutorProfiles/tutorProfile.router";
+
+const router = Router();
+
+const routes: IRoute[] = [
+  {
+    path: "/tutors",
+    route: TutorProfileRouters,
+  },
+];
+
+routes.forEach((route) => {
+  router.use(route.path, route.route);
+});
+
+export default router;
