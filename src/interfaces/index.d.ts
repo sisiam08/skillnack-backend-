@@ -5,3 +5,4 @@ export type {
   AppErrorType,
 } from "./error.type";
 
+export type { IRoute } from "./route.type";

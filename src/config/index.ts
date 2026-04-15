@@ -1,7 +1,5 @@
 import dotenv from "dotenv";
-import e from "express";
 import path from "path";
-import app from "../app";
 
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
