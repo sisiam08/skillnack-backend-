@@ -7,7 +7,41 @@ datasource db {
   provider = "postgresql"
 }
 
-model account {
+model User {
+  id            String         @id
+  name          String
+  email         String         @unique
+  emailVerified Boolean        @default(false)
+  image         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  role          UserRole
+  phone         String?
+  status        UserStatus?    @default(UNBAN)
+  accounts      Account[]
+  bookings      Bookings[]
+  sessions      Session[]
+  tutorProfile  TutorProfiles?
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
   id                    String    @id
   accountId             String
   providerId            String
@@ -20,78 +54,27 @@ model account {
   scope                 String?
   password              String?
   createdAt             DateTime  @default(now())
-  updatedAt             DateTime
-  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@map("account")
 }
 
-model bookings {
-  id            String        @id
-  studentId     String
-  tutorId       String
-  sessionDate   DateTime
-  startTime     String
-  endTime       String
-  price         Float
-  status        BookingStatus @default(CONFIRMED)
-  classLink     String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime
-  user          user          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  tutorProfiles tutorProfiles @relation(fields: [tutorId], references: [id])
-  reviews       reviews?
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@index([id])
+  @@index([identifier])
+  @@map("verification")
 }
 
-model categories {
-  id            String          @id
-  name          String          @unique @db.VarChar(100)
-  isActive      Boolean         @default(true)
-  tutorProfiles tutorProfiles[]
-
-  @@index([name])
-}
-
-model reviews {
-  id        String   @id
-  bookingId String   @unique
-  rating    Int
-  comment   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  bookings  bookings @relation(fields: [bookingId], references: [id])
-
-  @@index([bookingId])
-}
-
-model session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model tutorAvailability {
-  id            String        @id
-  tutorId       String
-  dayOfWeek     Int
-  startTime     String
-  endTime       String
-  isActive      Boolean       @default(true)
-  tutorProfiles tutorProfiles @relation(fields: [tutorId], references: [id], onDelete: Cascade)
-}
-
-model tutorProfiles {
-  id                     String              @id
+model TutorProfiles {
+  id                     String              @id @default(uuid())
   userId                 String              @unique
   categoriesId           String?
   bio                    String?             @db.VarChar(255)
@@ -102,48 +85,69 @@ model tutorProfiles {
   totalCompletedBookings Int                 @default(0)
   defaultClassLink       String?
   createdAt              DateTime            @default(now())
-  updatedAt              DateTime
-  bookings               bookings[]
-  tutorAvailability      tutorAvailability[]
-  categories             categories?         @relation(fields: [categoriesId], references: [id])
-  user                   user                @relation(fields: [userId], references: [id])
+  updatedAt              DateTime            @updatedAt
+  bookings               Bookings[]
+  availability           TutorAvailability[]
+  category               Categories?         @relation(fields: [categoriesId], references: [id])
+  user                   User                @relation(fields: [userId], references: [id])
 
   @@index([userId])
+  @@map("tutorProfiles")
 }
 
-model user {
-  id            String         @id
-  name          String
-  email         String         @unique
-  emailVerified Boolean        @default(false)
-  image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime
-  role          UserRole
-  phone         String?
-  status        UserStatus?    @default(UNBAN)
-  account       account[]
-  bookings      bookings[]
-  session       session[]
-  tutorProfiles tutorProfiles?
+model TutorAvailability {
+  id        String        @id @default(uuid())
+  tutorId   String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean       @default(true)
+  tutor     TutorProfiles @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@map("tutorAvailability")
 }
 
-model verification {
-  id         String   @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime
+model Categories {
+  id            String          @id @default(uuid())
+  name          String          @unique @db.VarChar(100)
+  isActive      Boolean         @default(true)
+  tutorProfiles TutorProfiles[]
 
-  @@index([identifier])
+  @@index([name])
+  @@map("categories")
 }
 
-enum BookingStatus {
-  CONFIRMED
-  RUNNING
-  COMPLETED
-  CANCELLED
+model Bookings {
+  id          String        @id @default(uuid())
+  studentId   String
+  tutorId     String
+  sessionDate DateTime
+  startTime   String
+  endTime     String
+  price       Float
+  status      BookingStatus @default(CONFIRMED)
+  classLink   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  student     User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tutor       TutorProfiles @relation(fields: [tutorId], references: [id])
+  reviews     Reviews?
+
+  @@index([id])
+  @@map("bookings")
+}
+
+model Reviews {
+  id        String   @id @default(uuid())
+  bookingId String   @unique
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  booking   Bookings @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId])
+  @@map("reviews")
 }
 
 enum UserRole {
@@ -155,4 +159,11 @@ enum UserRole {
 enum UserStatus {
   BAN
   UNBAN
+}
+
+enum BookingStatus {
+  CONFIRMED
+  RUNNING
+  COMPLETED
+  CANCELLED
 }
