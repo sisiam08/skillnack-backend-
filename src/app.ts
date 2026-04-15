@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
-import config from "../../frontend/config";
+import config from "./config";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth";
 
