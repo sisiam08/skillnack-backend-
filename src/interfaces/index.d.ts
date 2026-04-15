@@ -20,3 +20,7 @@ export type {
 } from "./error.type";
 
 export type { IRoute } from "./route.type";
+
+export type { PaginationOptions } from "./pagination.type";
+
+export type { SortingOptions } from "./sort.type";

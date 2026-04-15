@@ -5,4 +5,6 @@ const router = Router();
 
 router.post("/", TutorProfileControllers.createProfile);
 
+router.get("/", TutorProfileControllers.getAllProfiles);
+
 export const TutorProfileRouters: Router = router;
