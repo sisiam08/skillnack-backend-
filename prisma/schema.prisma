@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime
+  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model bookings {
+  id            String        @id
+  studentId     String
+  tutorId       String
+  sessionDate   DateTime
+  startTime     String
+  endTime       String
+  price         Float
+  status        BookingStatus @default(CONFIRMED)
+  classLink     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  user          user          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tutorProfiles tutorProfiles @relation(fields: [tutorId], references: [id])
+  reviews       reviews?
+
+  @@index([id])
+}
+
+model categories {
+  id            String          @id
+  name          String          @unique @db.VarChar(100)
+  isActive      Boolean         @default(true)
+  tutorProfiles tutorProfiles[]
+
+  @@index([name])
+}
+
+model reviews {
+  id        String   @id
+  bookingId String   @unique
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  bookings  bookings @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId])
+}
+
+model session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model tutorAvailability {
+  id            String        @id
+  tutorId       String
+  dayOfWeek     Int
+  startTime     String
+  endTime       String
+  isActive      Boolean       @default(true)
+  tutorProfiles tutorProfiles @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+}
+
+model tutorProfiles {
+  id                     String              @id
+  userId                 String              @unique
+  categoriesId           String?
+  bio                    String?             @db.VarChar(255)
+  hourlyRate             Float               @default(0.00)
+  experienceYears        Float
+  totalRating            Int                 @default(0)
+  totalReviews           Int                 @default(0)
+  totalCompletedBookings Int                 @default(0)
+  defaultClassLink       String?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime
+  bookings               bookings[]
+  tutorAvailability      tutorAvailability[]
+  categories             categories?         @relation(fields: [categoriesId], references: [id])
+  user                   user                @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model user {
+  id            String         @id
+  name          String
+  email         String         @unique
+  emailVerified Boolean        @default(false)
+  image         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  role          UserRole
+  phone         String?
+  status        UserStatus?    @default(UNBAN)
+  account       account[]
+  bookings      bookings[]
+  session       session[]
+  tutorProfiles tutorProfiles?
+}
+
+model verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+
+  @@index([identifier])
+}
+
+enum BookingStatus {
+  CONFIRMED
+  RUNNING
+  COMPLETED
+  CANCELLED
+}
+
+enum UserRole {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum UserStatus {
+  BAN
+  UNBAN
+}
