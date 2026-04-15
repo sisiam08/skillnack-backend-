@@ -60,7 +60,18 @@ const getAllProfiles = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getProfileById = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const data = await TutorProfileServices.getProfileById(id);
+  res.status(200).json({
+    success: true,
+    message: "Profile details retrieved successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
+  getProfileById,
 };
