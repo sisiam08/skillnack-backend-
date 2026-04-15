@@ -80,9 +80,20 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateProfile = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const data = await TutorProfileServices.updateProfile(userId, req.body);
+  res.status(200).json({
+    success: true,
+    message: "Profile updated successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
   getProfileById,
   getMyProfile,
+  updateProfile,
 };

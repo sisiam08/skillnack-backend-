@@ -1,5 +1,5 @@
 import { BookingStatus } from "../../../generated/prisma/enums";
-import { TutorProfilesCreateInput } from "../../../generated/prisma/models";
+import { TutorProfilesCreateInput, TutorProfilesUpdateInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 
 const createProfile = async (tutorData: TutorProfilesCreateInput) => {
@@ -208,10 +208,38 @@ const getMyProfile = async (userId: string) => {
   });
 };
 
+const updateProfile = async (
+  userId: string,
+  tutorData: TutorProfilesUpdateInput,
+) => {
+  return await prisma.tutorProfiles.update({
+    where: { userId },
+    data: tutorData,
+    include: {
+      user: true,
+      category: true,
+      availability: true,
+      bookings: {
+        where: { status: BookingStatus.COMPLETED },
+        include: {
+          reviews: {
+            select: {
+              rating: true,
+              comment: true,
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+
 
 export const TutorProfileServices = {
   createProfile,
   getAllProfiles,
   getProfileById,
   getMyProfile,
+  updateProfile,
 };

@@ -21,4 +21,10 @@ router.get(
 
 router.get("/:id", TutorProfileControllers.getProfileById);
 
+router.patch(
+  "/",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.updateProfile,
+);
+
 export const TutorProfileRouters: Router = router;
