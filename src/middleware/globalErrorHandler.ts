@@ -9,8 +9,9 @@ import {
 import { IErrorSource } from "../interfaces";
 import { Prisma } from "../../generated/prisma/client";
 import { handleZodError } from "../errors/zodError";
+import { deleteFileFromCloudinary } from "../config/cloudinary.config";
 
-export const globalErrorHandler = (
+export const globalErrorHandler = async (
   err: unknown,
   req: Request,
   res: Response,
@@ -23,6 +24,15 @@ export const globalErrorHandler = (
   // Store original error for logging in development
   const isDevelopment = process.env.NODE_ENV === "development";
   const stack = isDevelopment ? (err as Error).stack : undefined;
+
+  if (req.file) {
+    await deleteFileFromCloudinary(req.file.path);
+  }
+
+  if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+    const imageUrls = req.files.map((file: Express.Multer.File) => file.path);
+    await Promise.all(imageUrls.map((url) => deleteFileFromCloudinary(url)));
+  }
 
   // Handle Zod Validation Errors
   if (err instanceof ZodError) {

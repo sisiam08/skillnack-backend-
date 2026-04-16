@@ -1,15 +1,29 @@
-import { put } from "@vercel/blob";
+import {
+  uploadFileToCloudinary,
+  deleteFileFromCloudinary,
+} from "../../config/cloudinary.config";
 
 const uploadImage = async (file: Express.Multer.File) => {
   try {
-    const fileName = `uploads/${Date.now()}-${file.originalname}`;
+    if (!file) {
+      throw new Error("No file provided for upload");
+    }
 
-    const blob = await put(fileName, file.buffer, {
-      access: "public",
-      contentType: file.mimetype,
-    });
+    const result = await uploadFileToCloudinary(file.buffer, file.originalname);
+    return result.secure_url;
+  } catch (error) {
+    throw error;
+  }
+};
 
-    return blob.url;
+const deleteImage = async (imageUrl: string) => {
+  try {
+    if (!imageUrl) {
+      throw new Error("No image URL provided for deletion");
+    }
+
+    await deleteFileFromCloudinary(imageUrl);
+    return { success: true };
   } catch (error) {
     throw error;
   }
@@ -17,4 +31,5 @@ const uploadImage = async (file: Express.Multer.File) => {
 
 export const UploadServices = {
   uploadImage,
+  deleteImage,
 };

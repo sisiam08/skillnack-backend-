@@ -1,10 +1,14 @@
 import express from "express";
 import { UploadControllers } from "./upload.controller";
-import multer from "multer";
+import { upload, handleMulterErrors } from "../../config/multer.config";
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/", upload.single("image"), UploadControllers.uploadImage);
+router.post(
+  "/",
+  upload.single("image"),
+  handleMulterErrors,
+  UploadControllers.uploadImage,
+);
 
 export const UploadRouters = router;

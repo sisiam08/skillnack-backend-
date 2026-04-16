@@ -10,8 +10,13 @@ const config = {
   baseURL: process.env.BETTER_AUTH_URL,
   appUrl: process.env.APP_URL,
   betterAuth: {
-    secret: process.env.BETTER_AUTH_SECRET,
-    url: process.env.BETTER_AUTH_URL,
+    betterAuthSecret: process.env.BETTER_AUTH_SECRET,
+    betterAuthUrl: process.env.BETTER_AUTH_URL,
+  },
+  cloudinary: {
+    cloudinaryCloudName: process.env.CLOUDEINARY_CLOUD_NAME,
+    cloudinaryApiKey: process.env.CLOUDEINARY_API_KEY,
+    cloudinaryApiSecret: process.env.CLOUDEINARY_API_SECRET,
   },
 };
 

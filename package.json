@@ -29,11 +29,13 @@
     "@types/multer": "^2.1.0",
     "@types/nodemailer": "^8.0.0",
     "better-auth": "^1.6.3",
+    "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^8.0.5",
     "pg": "^8.20.0",
     "vercel": "^51.4.0"
