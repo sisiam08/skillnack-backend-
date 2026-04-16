@@ -774,6 +774,46 @@ const getTutorStats = async (userId: string) => {
   });
 };
 
+const getWeeklyEarnings = async (userId: string) => {
+  const tutorProfile = await prisma.tutorProfiles.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!tutorProfile) {
+    throw new Error("Tutor profile not found");
+  }
+
+  const currentWeekStart = startOfWeek(new Date());
+
+  const data = Array.from({ length: 7 }, async (_, i) => {
+    const dayStart = addDays(currentWeekStart, i);
+    const dayEnd = addDays(dayStart, 1);
+    const dayName = format(dayStart, "EEE");
+
+    const result = await prisma.bookings.aggregate({
+      where: {
+        tutorId: tutorProfile.id,
+        status: BookingStatus.COMPLETED,
+        sessionDate: {
+          gte: dayStart,
+          lt: dayEnd,
+        },
+      },
+      _sum: { price: true },
+    });
+
+    return {
+      weekDay: dayName,
+      earnings: result._sum.price ?? 0,
+    };
+  });
+
+  const weeklyEarnings = await Promise.all(data);
+
+  return weeklyEarnings;
+};
+
 export const TutorProfileServices = {
   createProfile,
   getAllProfiles,
@@ -789,4 +829,5 @@ export const TutorProfileServices = {
   setDefaultClassLink,
   getDefaultClassLink,
   getTutorStats,
+  getWeeklyEarnings,
 };

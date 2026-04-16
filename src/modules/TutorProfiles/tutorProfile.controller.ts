@@ -231,6 +231,16 @@ const getTutorStats = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getWeeklyEarnings = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const data = await TutorProfileServices.getWeeklyEarnings(userId!);
+  res.status(200).json({
+    success: true,
+    message: "Weekly earnings retrieved successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
@@ -246,4 +256,5 @@ export const TutorProfileControllers = {
   setDefaultClassLink,
   getDefaultClassLink,
   getTutorStats,
+  getWeeklyEarnings,
 };

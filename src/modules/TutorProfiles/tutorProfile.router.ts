@@ -37,6 +37,12 @@ router.get(
   TutorProfileControllers.getTutorStats,
 );
 
+router.get(
+  "/weeklyEarnings",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.getWeeklyEarnings,
+);
+
 router.get("/:id", TutorProfileControllers.getProfileById);
 
 router.patch(
