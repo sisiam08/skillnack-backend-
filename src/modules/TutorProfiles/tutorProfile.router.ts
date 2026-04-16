@@ -37,4 +37,11 @@ router.get("/:id/availability", TutorProfileControllers.getAvailability);
 
 router.get("/:id/availableSlots", TutorProfileControllers.getAvailableSlots);
 
+router.patch(
+  "/availability/:id",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.updateAvailability,
+);
+
+
 export const TutorProfileRouters: Router = router;

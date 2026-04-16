@@ -141,6 +141,24 @@ const getAvailableSlots = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateAvailability = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const id = req.params.id as string;
+  const availability = req.body;
+
+  const data = await TutorProfileServices.updateAvailability(
+    userId,
+    id,
+    availability,
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Availability updated successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
@@ -150,4 +168,5 @@ export const TutorProfileControllers = {
   setAvailability,
   getAvailability,
   getAvailableSlots,
+  updateAvailability,
 };

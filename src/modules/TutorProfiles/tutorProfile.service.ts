@@ -392,6 +392,57 @@ const getAvailableSlots = async (
   return { dayOfWeek, availableSlots, price };
 };
 
+const updateAvailability = async (
+  userId: string,
+  id: string,
+  availability: {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    isActive: boolean;
+  },
+) => {
+  const { dayOfWeek, startTime, endTime, isActive } = availability;
+
+  if (isActive === null) {
+    const StartMin = timeToMinutes(startTime);
+    const EndMin = timeToMinutes(endTime);
+
+    if (EndMin <= StartMin) {
+      throw new Error("Invalid time range");
+    }
+
+    const tutorProfile = await prisma.tutorProfiles.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!tutorProfile) {
+      throw new Error("Tutor profile not found");
+    }
+
+    const tutorId = tutorProfile.id;
+
+    const exixtingSlots = await prisma.tutorAvailability.findMany({
+      where: {
+        tutorId,
+        dayOfWeek,
+      },
+    });
+
+    if (isOverlapping({ startTime, endTime }, exixtingSlots)) {
+      throw new Error("Overlapping availability slots");
+    }
+  }
+
+  const data = await prisma.tutorAvailability.update({
+    where: { id },
+    data: availability,
+  });
+
+  return data;
+};
+
 export const TutorProfileServices = {
   createProfile,
   getAllProfiles,
@@ -401,4 +452,5 @@ export const TutorProfileServices = {
   setAvailability,
   getAvailability,
   getAvailableSlots,
+  updateAvailability,
 };
