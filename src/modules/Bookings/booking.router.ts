@@ -11,4 +11,10 @@ router.post(
   BookingControllers.createBooking,
 );
 
+router.get(
+  "/",
+  auth_middleware([UserRole.ADMIN]),
+  BookingControllers.getAllBookings,
+);
+
 export const BookingRouters = router;

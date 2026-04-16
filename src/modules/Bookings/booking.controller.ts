@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { BookingServices } from "./booking.service";
 import { catchAsync } from "../../utils/catchAsync";
+import { BookingStatus } from "../../../generated/prisma/enums";
+import { PaginationOptions } from "../../interfaces";
+import PaginationHelper from "../../helpers/Pagination";
 
 const createBooking = catchAsync(async (req: Request, res: Response) => {
   if (!req.user) {
@@ -26,6 +29,23 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllBookings = catchAsync(async (req: Request, res: Response) => {
+  const status = req.query.status
+    ? (req.query.status as BookingStatus)
+    : undefined;
+
+  const { page, limit, skip }: PaginationOptions = PaginationHelper(req.query);
+
+  const data = await BookingServices.getAllBookings(status, page, limit, skip);
+
+  return res.status(200).json({
+    success: true,
+    message: "Bookings retrieved successfully",
+    data,
+  });
+});
+
 export const BookingControllers = {
   createBooking,
+  getAllBookings,
 };

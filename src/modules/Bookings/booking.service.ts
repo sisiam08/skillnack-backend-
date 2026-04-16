@@ -7,6 +7,8 @@ import {
   validateBookingDateTime,
 } from "../../helpers/TimeHelpers";
 import { prisma } from "../../lib/prisma";
+import { addHours, format, startOfDay } from "date-fns";
+
 
 const createBooking = async (
   studentId: string,
@@ -100,6 +102,99 @@ const createBooking = async (
   });
 };
 
+const getAllBookings = async (
+  status?: BookingStatus,
+  page?: number,
+  limit?: number,
+  skip?: number,
+) => {
+  return await prisma.$transaction(async (tx) => {
+    const today = startOfDay(new Date());
+    const currentTime = format(addHours(new Date(), 6), "HH:mm");
+
+    await tx.bookings.updateMany({
+      where: {
+        OR: [
+          {
+            sessionDate: {
+              lt: today,
+            },
+          },
+          {
+            sessionDate: {
+              equals: today,
+            },
+            endTime: {
+              lt: currentTime,
+            },
+          },
+        ],
+        status: BookingStatus.CONFIRMED,
+      },
+      data: {
+        status: BookingStatus.CANCELLED,
+      },
+    });
+    const isPaginated = limit !== undefined;
+
+    const [result, totalData] = await Promise.all([
+      tx.bookings.findMany({
+        ...(isPaginated && { skip: skip as number, take: limit as number }),
+
+        where: status ? { status } : {},
+        orderBy: [{ sessionDate: "desc" }, { startTime: "desc" }],
+        include: {
+          tutor: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  role: true,
+                  image: true,
+                },
+              },
+              category: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              image: true,
+            },
+          },
+          reviews: {
+            select: { id: true, rating: true, comment: true },
+          },
+        },
+      }),
+
+      tx.bookings.count({
+        where: status ? { status } : {},
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalData / (limit as number));
+
+    return {
+      data: result,
+      pagination: {
+        totalData,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  });
+};
+
 export const BookingServices = {
   createBooking,
+  getAllBookings,
 };
