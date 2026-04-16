@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-/**
- * Create review validation schema
- * Validates: bookingId, rating (1-5), and optional comment
- */
 export const createReviewValidationSchema = z.object({
   body: z.object({
     bookingId: z.string().min(1, "Booking ID is required"),
@@ -17,10 +13,6 @@ export const createReviewValidationSchema = z.object({
   query: z.object({}).optional(),
 });
 
-/**
- * Get all reviews validation schema
- * Validates: pagination parameters
- */
 export const getAllReviewsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
@@ -30,10 +22,6 @@ export const getAllReviewsValidationSchema = z.object({
   }),
 });
 
-/**
- * Get reviews for specific tutor validation schema
- * Validates: tutorId in params
- */
 export const getTutorReviewsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({

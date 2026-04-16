@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-/**
- * Booking creation validation schema
- * Validates: tutorId, startTime, endTime, optional currentTime and todayDate
- */
 export const createBookingValidationSchema = z.object({
   body: z.object({
     tutorId: z.string().min(1, "Tutor ID is required"),
@@ -16,10 +12,6 @@ export const createBookingValidationSchema = z.object({
   query: z.object({}).optional(),
 });
 
-/**
- * Get all bookings validation schema
- * Validates: status (optional), pagination parameters
- */
 export const getAllBookingsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
@@ -32,10 +24,6 @@ export const getAllBookingsValidationSchema = z.object({
   }),
 });
 
-/**
- * Get booking details validation schema
- * Validates: bookingId in params
- */
 export const getBookingDetailsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({
@@ -44,10 +32,6 @@ export const getBookingDetailsValidationSchema = z.object({
   query: z.object({}).optional(),
 });
 
-/**
- * Update booking status validation schema
- * Validates: bookingId in params, new status in body
- */
 export const updateBookingStatusValidationSchema = z.object({
   body: z.object({
     status: z.enum(["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"], {

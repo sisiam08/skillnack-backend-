@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/**
- * Create tutor profile validation schema
- */
 export const createTutorProfileValidationSchema = z.object({
   body: z.object({
     bio: z.string().optional(),
@@ -17,9 +14,6 @@ export const createTutorProfileValidationSchema = z.object({
   query: z.object({}).optional(),
 });
 
-/**
- * Update tutor profile validation schema
- */
 export const updateTutorProfileValidationSchema = z.object({
   body: z.object({
     bio: z.string().optional(),
@@ -34,10 +28,6 @@ export const updateTutorProfileValidationSchema = z.object({
   query: z.object({}).optional(),
 });
 
-/**
- * Get all tutor profiles validation schema
- * Validates: search, category, price filters, pagination, sorting
- */
 export const getAllTutorProfilesValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
@@ -55,58 +45,43 @@ export const getAllTutorProfilesValidationSchema = z.object({
   }),
 });
 
-/**
- * Get tutor profile by ID validation schema
- */
 export const getTutorProfileByIdValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({
-    id: z.string({ required_error: "Tutor ID is required" }).min(1),
+    id: z.string().min(1, "Tutor ID is required"),
   }),
   query: z.object({}).optional(),
 });
 
-/**
- * Get tutor availability validation schema
- */
 export const getTutorAvailabilityValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({
-    id: z.string({ required_error: "Tutor ID is required" }).min(1),
+    id: z.string().min(1, "Tutor ID is required"),
   }),
   query: z.object({}).optional(),
 });
 
-/**
- * Get available slots validation schema
- */
 export const getAvailableSlotsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({
-    id: z.string({ required_error: "Tutor ID is required" }).min(1),
+    id: z.string().min(1, "Tutor ID is required"),
   }),
   query: z.object({
-    selectedDate: z.string({ required_error: "Selected date is required" }),
+    selectedDate: z.string().min(1, "Selected date is required"),
     slotDuration: z.string().optional(),
   }),
 });
 
-/**
- * Set availability validation schema
- */
 export const setAvailabilityValidationSchema = z.object({
   body: z.object({
-    day: z.string({ required_error: "Day is required" }),
-    startTime: z.string({ required_error: "Start time is required" }),
-    endTime: z.string({ required_error: "End time is required" }),
+    day: z.string().min(1, "Day is required"),
+    startTime: z.string().min(1, "Start time is required"),
+    endTime: z.string().min(1, "End time is required"),
   }),
   params: z.object({}).optional(),
   query: z.object({}).optional(),
 });
 
-/**
- * Update availability validation schema
- */
 export const updateAvailabilityValidationSchema = z.object({
   body: z.object({
     day: z.string().optional(),
@@ -114,53 +89,43 @@ export const updateAvailabilityValidationSchema = z.object({
     endTime: z.string().optional(),
   }),
   params: z.object({
-    id: z.string({ required_error: "Availability ID is required" }).min(1),
+    id: z.string().min(1, "Availability ID is required"),
   }),
   query: z.object({}).optional(),
 });
 
-/**
- * Delete availability validation schema
- */
 export const deleteAvailabilityValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({
-    id: z.string({ required_error: "Availability ID is required" }).min(1),
+    id: z.string().min(1, "Availability ID is required"),
   }),
   query: z.object({}).optional(),
 });
 
-/**
- * Send class link validation schema
- */
 export const sendClassLinkValidationSchema = z.object({
   body: z.object({
     classLink: z
-      .string({ required_error: "Class link is required" })
+      .string()
+      .min(1, "Class link is required")
       .url("Must be a valid URL"),
   }),
   params: z.object({
-    id: z.string({ required_error: "Tutor ID is required" }).min(1),
+    id: z.string().min(1, "Tutor ID is required"),
   }),
   query: z.object({}).optional(),
 });
 
-/**
- * Set default class link validation schema
- */
 export const setDefaultClassLinkValidationSchema = z.object({
   body: z.object({
     defaultClassLink: z
-      .string({ required_error: "Default class link is required" })
+      .string()
+      .min(1, "Default class link is required")
       .url("Must be a valid URL"),
   }),
   params: z.object({}).optional(),
   query: z.object({}).optional(),
 });
 
-/**
- * Get booking sessions validation schema
- */
 export const getBookingSessionsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
@@ -173,36 +138,24 @@ export const getBookingSessionsValidationSchema = z.object({
   }),
 });
 
-/**
- * Get tutor stats validation schema
- */
 export const getTutorStatsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
   query: z.object({}).optional(),
 });
 
-/**
- * Get weekly earnings validation schema
- */
 export const getWeeklyEarningsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
   query: z.object({}).optional(),
 });
 
-/**
- * Get my profile validation schema
- */
 export const getMyProfileValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
   query: z.object({}).optional(),
 });
 
-/**
- * Get default class link validation schema
- */
 export const getDefaultClassLinkValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),

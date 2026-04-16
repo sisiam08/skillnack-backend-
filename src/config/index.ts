@@ -1,4 +1,3 @@
-import { admin } from "better-auth/plugins";
 import dotenv from "dotenv";
 import path from "path";
 

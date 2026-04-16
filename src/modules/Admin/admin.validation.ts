@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-/**
- * Get all users validation schema
- * Validates: search, role filter, status filter, pagination
- */
 export const getAllUsersValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
@@ -16,10 +12,6 @@ export const getAllUsersValidationSchema = z.object({
   }),
 });
 
-/**
- * Update user status validation schema
- * Validates: userId in params, status in body
- */
 export const updateUserStatusValidationSchema = z.object({
   body: z.object({
     status: z.string().min(1, "Status is required"),
@@ -30,10 +22,6 @@ export const updateUserStatusValidationSchema = z.object({
   query: z.object({}).optional(),
 });
 
-/**
- * Get admin stats validation schema
- * No parameters needed
- */
 export const getAdminStatsValidationSchema = z.object({
   body: z.object({}).optional(),
   params: z.object({}).optional(),
