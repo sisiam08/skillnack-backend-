@@ -71,6 +71,112 @@ const getStudentStats = async (userId: string) => {
   });
 };
 
+const getRecentActivity = async (userId: string) => {
+  return await prisma.$transaction(async (tx) => {
+    const [recentSession, recentReview, recentBooking] = await Promise.all([
+      // recent completed session
+      tx.bookings.findFirst({
+        where: {
+          studentId: userId,
+          status: BookingStatus.COMPLETED,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        select: {
+          updatedAt: true,
+          tutor: {
+            select: {
+              user: {
+                select: {
+                  name: true,
+                },
+              },
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+
+      // recent review
+      tx.reviews.findFirst({
+        where: {
+          booking: {
+            studentId: userId,
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          rating: true,
+          createdAt: true,
+          booking: {
+            select: {
+              tutor: {
+                select: {
+                  user: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+
+      // recent booking
+      tx.bookings.findFirst({
+        where: {
+          studentId: userId,
+          status: BookingStatus.CONFIRMED,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          sessionDate: true,
+          createdAt: true,
+          tutor: {
+            select: {
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      recentSession: {
+        tutorName: recentSession?.tutor.user.name,
+        categoryName: recentSession?.tutor?.category?.name,
+        timeAgo: timeAgo(recentSession?.updatedAt as Date),
+      },
+      recentReview: {
+        rating: recentReview?.rating,
+        tutorName: recentReview?.booking.tutor.user.name,
+        timeAgo: timeAgo(recentReview?.createdAt as Date),
+      },
+      recentBooking: {
+        sessionDate: recentBooking?.sessionDate,
+        categoryName: recentBooking?.tutor?.category?.name,
+        timeAgo: timeAgo(recentBooking?.createdAt as Date),
+      },
+    };
+  });
+};
+
 export const StudentServices = {
   getStudentStats,
+  getRecentActivity,
 };

@@ -13,6 +13,18 @@ const getStudentStats = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getRecentActivity = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const data = await StudentServices.getRecentActivity(userId!);
+
+  return res.status(200).json({
+    success: true,
+    message: "Recent activity retrieved successfully",
+    data: data,
+  });
+});
+
 export const StudentControllers = {
   getStudentStats,
+  getRecentActivity,
 };

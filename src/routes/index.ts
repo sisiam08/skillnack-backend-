@@ -5,6 +5,8 @@ import { CategoryRouters } from "../modules/Categories/category.router";
 import { BookingRouters } from "../modules/Bookings/booking.router";
 import { UserRouters } from "../modules/Users/user.router";
 import { AdminRouters } from "../modules/Admin/admin.router";
+import { StudentRouter } from "../modules/Students/student.router";
+import { ReviewRouters } from "../modules/Reviews/review.router";
 
 const router = Router();
 
@@ -18,6 +20,10 @@ const routes: IRoute[] = [
     route: UserRouters,
   },
   {
+    path: "/students",
+    route: StudentRouter,
+  },
+  {
     path: "/tutors",
     route: TutorProfileRouters,
   },
@@ -28,6 +34,10 @@ const routes: IRoute[] = [
   {
     path: "/bookings",
     route: BookingRouters,
+  },
+  {
+    path: "/reviews",
+    route: ReviewRouters,
   },
 ];
 

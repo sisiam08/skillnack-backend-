@@ -11,4 +11,10 @@ router.get(
   StudentControllers.getStudentStats,
 );
 
+router.get(
+  "/recentActivity",
+  auth_middleware([UserRole.STUDENT]),
+  StudentControllers.getRecentActivity,
+);
+
 export const StudentRouter = router;
