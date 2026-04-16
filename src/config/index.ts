@@ -1,3 +1,4 @@
+import { admin } from "better-auth/plugins";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -17,6 +18,19 @@ const config = {
     cloudinaryCloudName: process.env.CLOUDEINARY_CLOUD_NAME,
     cloudinaryApiKey: process.env.CLOUDEINARY_API_KEY,
     cloudinaryApiSecret: process.env.CLOUDEINARY_API_SECRET,
+  },
+  admin: {
+    name: process.env.ADMIN_NAME,
+    email: process.env.ADMIN_EMAIL,
+    password: process.env.ADMIN_PASSWORD,
+  },
+  nodemailer: {
+    host: process.env.NODEMAILER_HOST,
+    port: parseInt(process.env.NODEMAILER_PORT as string),
+    auth: {
+      user: process.env.APP_USER,
+      pass: process.env.APP_PASSWORD,
+    },
   },
 };
 

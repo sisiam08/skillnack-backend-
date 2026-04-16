@@ -4,14 +4,19 @@ import { prisma } from "./prisma";
 import nodemailer from "nodemailer";
 import config from "../config";
 
+let skipEmailDuringSeed = false;
+
+export const setSkipEmailDuringSeed = (value: boolean) => {
+  skipEmailDuringSeed = value;
+};
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
+  host: config.nodemailer.host,
+  port: config.nodemailer.port,
   secure: false,
   auth: {
-    user: process.env.APP_USER,
-    pass: process.env.APP_PASSWORD,
+    user: config.nodemailer.auth.user,
+    pass: config.nodemailer.auth.pass,
   },
 });
 
@@ -45,6 +50,11 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     autoSignInAfterVerification: false,
     sendVerificationEmail: async ({ user, url }) => {
+      // Skip email during seeding
+      if (skipEmailDuringSeed) {
+        return;
+      }
+
       try {
         const verificationURL = url;
 

@@ -2,6 +2,7 @@ import { Server } from "http";
 import app from "./app";
 import { prisma } from "./lib/prisma";
 import config from "./config";
+import { seedAdmin } from "../prisma/seed";
 
 let server: Server;
 
@@ -9,8 +10,17 @@ async function main() {
   try {
     await prisma.$connect();
     console.log("Database connected successfully");
-    server = app.listen(config.port, () => {
-      console.log(`Ilmefy app listening on port ${config.port}`);
+
+    server = app.listen(config.port, async () => {
+      console.log(`Skillnack app listening on port ${config.port}`);
+
+      // Run seed AFTER server starts listening
+      try {
+        await seedAdmin();
+      } catch (seedError: any) {
+        console.warn("Seed warning:", seedError.message);
+        // Don't fail startup if seed fails
+      }
     });
   } catch (err) {
     console.error("Failed to start server:", err);

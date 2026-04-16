@@ -2,10 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { httpStatus } from "./httpStatus";
 
-/**
- * Multer error handler middleware
- * Handles file upload errors and converts them to consistent AppError format
- */
 export const handleMulterErrors = (
   err: any,
   req: Request,
