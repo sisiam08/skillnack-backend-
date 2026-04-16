@@ -4,6 +4,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { PaginationOptions, SortingOptions } from "../../interfaces";
 import PaginationHelper from "../../helpers/Pagination";
 import SortingHelper from "../../helpers/Sorting";
+import { BookingStatus } from "../../../generated/prisma/enums";
 
 const createProfile = catchAsync(async (req: Request, res: Response) => {
   const data = await TutorProfileServices.createProfile(req.body);
@@ -171,6 +172,28 @@ const deleteAvailability = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getBookingSessions = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const status = req.query.status
+    ? (req.query.status as BookingStatus)
+    : undefined;
+
+  const { page, limit, skip }: PaginationOptions = PaginationHelper(req.query);
+
+  const data = await TutorProfileServices.getBookingSessions(
+    userId!,
+    status,
+    page,
+    limit,
+    skip,
+  );
+  res.status(200).json({
+    success: true,
+    message: "Sessions retrieved successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
@@ -182,4 +205,5 @@ export const TutorProfileControllers = {
   getAvailableSlots,
   updateAvailability,
   deleteAvailability,
+  getBookingSessions,
 };

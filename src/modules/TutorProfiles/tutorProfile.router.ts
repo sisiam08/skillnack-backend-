@@ -19,6 +19,12 @@ router.get(
   TutorProfileControllers.getMyProfile,
 );
 
+router.get(
+  "/bookings",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.getBookingSessions,
+);
+
 router.get("/:id", TutorProfileControllers.getProfileById);
 
 router.patch(

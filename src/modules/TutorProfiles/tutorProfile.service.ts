@@ -1,11 +1,28 @@
-import { addHours, getHours, getMinutes, isSameDay } from "date-fns";
+import {
+  addDays,
+  addHours,
+  format,
+  getHours,
+  getMinutes,
+  isEqual,
+  isSameDay,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import { BookingStatus } from "../../../generated/prisma/enums";
 import {
   TutorProfilesCreateInput,
   TutorProfilesUpdateInput,
 } from "../../../generated/prisma/models";
 import { calculateTutionPrice } from "../../helpers/CalculateTutionPrice";
-import { isOverlapping, minutesToTime, subtractBookedFromFreeSlots, timeToMinutes, validateBookingDateTime } from "../../helpers/TimeHelpers";
+import {
+  isOverlapping,
+  minutesToTime,
+  subtractBookedFromFreeSlots,
+  timeToMinutes,
+  validateBookingDateTime,
+} from "../../helpers/TimeHelpers";
 import { prisma } from "../../lib/prisma";
 
 const createProfile = async (tutorData: TutorProfilesCreateInput) => {
@@ -449,6 +466,107 @@ const deleteAvailability = async (id: string) => {
   });
 };
 
+const getBookingSessions = async (
+  userId: string,
+  status: BookingStatus | undefined,
+  page?: number,
+  limit?: number,
+  skip?: number,
+) => {
+  const tutorProfile = await prisma.tutorProfiles.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!tutorProfile) {
+    throw new Error("Tutor profile not found");
+  }
+
+  const andConditions: any = { tutorId: tutorProfile.id };
+
+  if (status) {
+    andConditions.status = status;
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    const today = startOfDay(new Date());
+    const currentTime = format(addHours(new Date(), 6), "HH:mm");
+
+    await tx.bookings.updateMany({
+      where: {
+        OR: [
+          {
+            sessionDate: {
+              lt: today,
+            },
+          },
+          {
+            sessionDate: {
+              equals: today,
+            },
+            endTime: {
+              lt: currentTime,
+            },
+          },
+        ],
+        status: BookingStatus.CONFIRMED,
+      },
+      data: {
+        status: BookingStatus.CANCELLED,
+      },
+    });
+
+    const isPaginated = limit !== undefined;
+
+    const [result, totalData] = await Promise.all([
+      prisma.bookings.findMany({
+        ...(isPaginated && { skip: skip as number, take: limit as number }),
+
+        where: andConditions,
+        orderBy: [{ sessionDate: "asc" }, { startTime: "asc" }],
+        include: {
+          tutor: {
+            select: {
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          student: {
+            select: {
+              name: true,
+              email: true,
+              role: true,
+              image: true,
+            },
+          },
+          reviews: {
+            select: {
+              rating: true,
+              comment: true,
+            },
+          },
+        },
+      }),
+
+      tx.bookings.count({ where: andConditions }),
+    ]);
+
+    const totalPages = Math.ceil(totalData / (limit as number));
+
+    return {
+      data: result,
+      pagination: {
+        totalData,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  });
+};
 
 export const TutorProfileServices = {
   createProfile,
@@ -461,4 +579,5 @@ export const TutorProfileServices = {
   getAvailableSlots,
   updateAvailability,
   deleteAvailability,
+  getBookingSessions,
 };
