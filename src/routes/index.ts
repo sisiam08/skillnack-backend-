@@ -7,6 +7,7 @@ import { UserRouters } from "../modules/Users/user.router";
 import { AdminRouters } from "../modules/Admin/admin.router";
 import { StudentRouter } from "../modules/Students/student.router";
 import { ReviewRouters } from "../modules/Reviews/review.router";
+import { UploadRouters } from "../modules/Uploads/upload.router";
 
 const router = Router();
 
@@ -38,6 +39,10 @@ const routes: IRoute[] = [
   {
     path: "/reviews",
     route: ReviewRouters,
+  },
+  {
+    path: "/uploads",
+    route: UploadRouters,
   },
 ];
 
