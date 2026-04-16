@@ -241,6 +241,26 @@ const getWeeklyEarnings = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const sendClassLink = catchAsync(async (req: Request, res: Response) => {
+  const bookingId = req.params.id;
+  const { classLink } = req.body;
+  const data = await TutorProfileServices.sendClassLink(
+    bookingId as string,
+    classLink as string,
+  );
+  if (!data) {
+    return res.status(404).json({
+      success: false,
+      message: "Booking not found",
+    });
+  }
+  return res.status(200).json({
+    success: true,
+    message: "Class link sent successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
@@ -257,4 +277,5 @@ export const TutorProfileControllers = {
   getDefaultClassLink,
   getTutorStats,
   getWeeklyEarnings,
+  sendClassLink,
 };

@@ -62,6 +62,12 @@ router.get("/:id/availability", TutorProfileControllers.getAvailability);
 router.get("/:id/availableSlots", TutorProfileControllers.getAvailableSlots);
 
 router.patch(
+  "/:id/classLink",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.sendClassLink,
+);
+
+router.patch(
   "/availability/:id",
   auth_middleware([UserRole.TUTOR]),
   TutorProfileControllers.updateAvailability,
