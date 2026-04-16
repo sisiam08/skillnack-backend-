@@ -159,6 +159,18 @@ const updateAvailability = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteAvailability = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  const data = await TutorProfileServices.deleteAvailability(id);
+
+  res.status(200).json({
+    success: true,
+    message: "Availability deleted successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
@@ -169,4 +181,5 @@ export const TutorProfileControllers = {
   getAvailability,
   getAvailableSlots,
   updateAvailability,
+  deleteAvailability,
 };

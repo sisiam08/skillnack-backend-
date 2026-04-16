@@ -43,5 +43,10 @@ router.patch(
   TutorProfileControllers.updateAvailability,
 );
 
+router.delete(
+  "/availability/:id",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.deleteAvailability,
+);
 
 export const TutorProfileRouters: Router = router;

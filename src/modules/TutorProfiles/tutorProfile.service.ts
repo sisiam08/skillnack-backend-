@@ -443,6 +443,13 @@ const updateAvailability = async (
   return data;
 };
 
+const deleteAvailability = async (id: string) => {
+  return await prisma.tutorAvailability.delete({
+    where: { id },
+  });
+};
+
+
 export const TutorProfileServices = {
   createProfile,
   getAllProfiles,
@@ -453,4 +460,5 @@ export const TutorProfileServices = {
   getAvailability,
   getAvailableSlots,
   updateAvailability,
+  deleteAvailability,
 };
