@@ -33,4 +33,6 @@ router.post(
   TutorProfileControllers.setAvailability,
 );
 
+router.get("/:id/availability", TutorProfileControllers.getAvailability);
+
 export const TutorProfileRouters: Router = router;

@@ -281,6 +281,20 @@ const setAvailability = async (
   });
 };
 
+const getAvailability = async (tutorId: string) => {
+  const availabilities = await prisma.tutorAvailability.findMany({
+    where: { tutorId, isActive: true },
+    orderBy: [{ dayOfWeek: "asc" }, { startTime: "desc" }],
+  });
+
+  return availabilities.filter((av) => {
+    if (!av.startTime || !av.endTime) {
+      return false;
+    }
+    return true;
+  });
+};
+
 export const TutorProfileServices = {
   createProfile,
   getAllProfiles,
@@ -288,4 +302,5 @@ export const TutorProfileServices = {
   getMyProfile,
   updateProfile,
   setAvailability,
+  getAvailability,
 };

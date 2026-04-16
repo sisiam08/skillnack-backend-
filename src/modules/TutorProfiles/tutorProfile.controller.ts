@@ -103,6 +103,27 @@ const setAvailability = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAvailability = catchAsync(async (req: Request, res: Response) => {
+  const tutorId = req.params.id as string;
+
+  const tutorProfile = await TutorProfileServices.getProfileById(tutorId);
+
+  if (req.user?.role === "TUTOR" && req.user?.id !== tutorProfile?.user.id) {
+    return res.status(403).json({
+      success: false,
+      message: "You dont have permission to view other tutor's availability",
+    });
+  }
+
+  const data = await TutorProfileServices.getAvailability(tutorId);
+
+  res.status(200).json({
+    success: true,
+    message: "Availability retrieved successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
@@ -110,4 +131,5 @@ export const TutorProfileControllers = {
   getMyProfile,
   updateProfile,
   setAvailability,
+  getAvailability,
 };
