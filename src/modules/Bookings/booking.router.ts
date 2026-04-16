@@ -17,4 +17,10 @@ router.get(
   BookingControllers.getAllBookings,
 );
 
+router.get(
+  "/my-bookings",
+  auth_middleware([UserRole.STUDENT]),
+  BookingControllers.getMyBookings,
+);
+
 export const BookingRouters = router;

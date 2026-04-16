@@ -194,7 +194,88 @@ const getAllBookings = async (
   });
 };
 
+const getMyBookings = async (
+  studentId: string,
+  status?: BookingStatus | undefined,
+  page?: number,
+  limit?: number,
+  skip?: number,
+) => {
+  return await prisma.$transaction(async (tx) => {
+    const today = startOfDay(new Date());
+    const currentTime = format(addHours(new Date(), 6), "HH:mm");
+
+    const andConditions: any = { studentId };
+
+    if (status) {
+      andConditions.status = status;
+    }
+
+    await tx.bookings.updateMany({
+      where: {
+        OR: [
+          {
+            sessionDate: {
+              lt: today,
+            },
+          },
+          {
+            sessionDate: {
+              equals: today,
+            },
+            endTime: {
+              lt: currentTime,
+            },
+          },
+        ],
+        status: BookingStatus.CONFIRMED,
+        studentId: studentId,
+      },
+      data: {
+        status: BookingStatus.CANCELLED,
+      },
+    });
+
+    const isPaginated = limit !== undefined;
+
+    const [result, totalData] = await Promise.all([
+      tx.bookings.findMany({
+        ...(isPaginated && { skip: skip as number, take: limit as number }),
+        where: andConditions,
+        orderBy: [{ sessionDate: "desc" }, { startTime: "asc" }],
+        include: {
+          tutor: {
+            include: {
+              user: true,
+              category: true,
+            },
+          },
+          reviews: true,
+        },
+      }),
+
+      tx.bookings.count({
+        where: andConditions,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalData / (limit as number));
+
+    return {
+      data: result,
+      pagination: {
+        totalData,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  });
+};
+
 export const BookingServices = {
   createBooking,
   getAllBookings,
+  getMyBookings,
+
 };

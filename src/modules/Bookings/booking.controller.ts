@@ -45,7 +45,31 @@ const getAllBookings = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyBookings = catchAsync(async (req: Request, res: Response) => {
+  const studentId = req?.user?.id;
+  const status = req.query.status
+    ? (req.query.status as BookingStatus)
+    : undefined;
+
+  const { page, limit, skip }: PaginationOptions = PaginationHelper(req.query);
+
+  const data = await BookingServices.getMyBookings(
+    studentId!,
+    status,
+    page,
+    limit,
+    skip,
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: "Bookings retrieved successfully",
+    data,
+  });
+});
+
 export const BookingControllers = {
   createBooking,
   getAllBookings,
+  getMyBookings,
 };
