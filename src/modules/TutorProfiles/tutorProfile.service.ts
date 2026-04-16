@@ -568,6 +568,34 @@ const getBookingSessions = async (
   });
 };
 
+const setDefaultClassLink = async (
+  userId: string,
+  defaultClassLink: string,
+) => {
+  const tutorProfile = await prisma.tutorProfiles.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+  if (!tutorProfile) {
+    throw new Error("Tutor profile not found");
+  }
+  return await prisma.tutorProfiles.update({
+    where: { id: tutorProfile.id },
+    data: { defaultClassLink: defaultClassLink },
+  });
+};
+
+const getDefaultClassLink = async (userId: string) => {
+  const tutorProfile = await prisma.tutorProfiles.findUnique({
+    where: { userId },
+    select: { defaultClassLink: true },
+  });
+  if (!tutorProfile) {
+    throw new Error("Tutor profile not found");
+  }
+  return { defaultClassLink: tutorProfile.defaultClassLink };
+};
+
 export const TutorProfileServices = {
   createProfile,
   getAllProfiles,
@@ -580,4 +608,6 @@ export const TutorProfileServices = {
   updateAvailability,
   deleteAvailability,
   getBookingSessions,
+  setDefaultClassLink,
+  getDefaultClassLink,
 };

@@ -194,6 +194,32 @@ const getBookingSessions = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const setDefaultClassLink = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const { defaultClassLink } = req.body;
+  const data = await TutorProfileServices.setDefaultClassLink(
+    userId,
+    defaultClassLink,
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Default class link set successfully",
+    data,
+  });
+});
+
+const getDefaultClassLink = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const data = await TutorProfileServices.getDefaultClassLink(userId);
+
+  res.status(200).json({
+    success: true,
+    message: "Default class link retrieved successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
@@ -206,4 +232,6 @@ export const TutorProfileControllers = {
   updateAvailability,
   deleteAvailability,
   getBookingSessions,
+  setDefaultClassLink,
+  getDefaultClassLink,
 };

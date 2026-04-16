@@ -25,6 +25,12 @@ router.get(
   TutorProfileControllers.getBookingSessions,
 );
 
+router.get(
+  "/defaultClassLink",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.getDefaultClassLink,
+);
+
 router.get("/:id", TutorProfileControllers.getProfileById);
 
 router.patch(
@@ -53,6 +59,12 @@ router.delete(
   "/availability/:id",
   auth_middleware([UserRole.TUTOR]),
   TutorProfileControllers.deleteAvailability,
+);
+
+router.patch(
+  "/defaultClassLink",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.setDefaultClassLink,
 );
 
 export const TutorProfileRouters: Router = router;
