@@ -35,4 +35,6 @@ router.post(
 
 router.get("/:id/availability", TutorProfileControllers.getAvailability);
 
+router.get("/:id/availableSlots", TutorProfileControllers.getAvailableSlots);
+
 export const TutorProfileRouters: Router = router;
