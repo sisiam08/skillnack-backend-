@@ -1,5 +1,9 @@
 import { BookingStatus } from "../../../generated/prisma/enums";
-import { TutorProfilesCreateInput, TutorProfilesUpdateInput } from "../../../generated/prisma/models";
+import {
+  TutorProfilesCreateInput,
+  TutorProfilesUpdateInput,
+} from "../../../generated/prisma/models";
+import { isOverlapping, timeToMinutes } from "../../helpers/TimeHelpers";
 import { prisma } from "../../lib/prisma";
 
 const createProfile = async (tutorData: TutorProfilesCreateInput) => {
@@ -234,7 +238,48 @@ const updateProfile = async (
   });
 };
 
+const setAvailability = async (
+  userId: string,
+  availability: { dayOfWeek: number; startTime: string; endTime: string },
+) => {
+  const { dayOfWeek, startTime, endTime } = availability;
 
+  const StartMin = timeToMinutes(startTime);
+  const EndMin = timeToMinutes(endTime);
+
+  if (EndMin <= StartMin) {
+    throw new Error("Invalid time range");
+  }
+
+  const tutorProfile = await prisma.tutorProfiles.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!tutorProfile) {
+    throw new Error("Tutor profile not found");
+  }
+
+  const tutorId = tutorProfile.id;
+
+  const exixtingSlots = await prisma.tutorAvailability.findMany({
+    where: {
+      tutorId,
+      dayOfWeek,
+    },
+  });
+
+  if (isOverlapping({ startTime, endTime }, exixtingSlots)) {
+    throw new Error("Overlapping availability slots");
+  }
+
+  return await prisma.tutorAvailability.create({
+    data: {
+      tutorId,
+      ...availability,
+    },
+  });
+};
 
 export const TutorProfileServices = {
   createProfile,
@@ -242,4 +287,5 @@ export const TutorProfileServices = {
   getProfileById,
   getMyProfile,
   updateProfile,
+  setAvailability,
 };

@@ -90,10 +90,24 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const setAvailability = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const availability = req.body;
+
+  const data = await TutorProfileServices.setAvailability(userId, availability);
+
+  res.status(201).json({
+    success: true,
+    message: "Availability set successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
   getProfileById,
   getMyProfile,
   updateProfile,
+  setAvailability,
 };

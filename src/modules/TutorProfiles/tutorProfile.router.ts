@@ -27,4 +27,10 @@ router.patch(
   TutorProfileControllers.updateProfile,
 );
 
+router.post(
+  "/availability",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.setAvailability,
+);
+
 export const TutorProfileRouters: Router = router;
