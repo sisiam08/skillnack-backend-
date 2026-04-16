@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { IRoute } from "../interfaces";
 import { TutorProfileRouters } from "../modules/TutorProfiles/tutorProfile.router";
+import { CategoryRouters } from "../modules/Categories/category.router";
 
 const router = Router();
 
@@ -8,6 +9,10 @@ const routes: IRoute[] = [
   {
     path: "/tutors",
     route: TutorProfileRouters,
+  },
+  {
+    path: "/categories",
+    route: CategoryRouters,
   },
 ];
 
