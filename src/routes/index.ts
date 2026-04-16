@@ -4,10 +4,19 @@ import { TutorProfileRouters } from "../modules/TutorProfiles/tutorProfile.route
 import { CategoryRouters } from "../modules/Categories/category.router";
 import { BookingRouters } from "../modules/Bookings/booking.router";
 import { UserRouters } from "../modules/Users/user.router";
+import { AdminRouters } from "../modules/Admin/admin.router";
 
 const router = Router();
 
 const routes: IRoute[] = [
+  {
+    path: "/admin",
+    route: AdminRouters,
+  },
+  {
+    path: "/users",
+    route: UserRouters,
+  },
   {
     path: "/tutors",
     route: TutorProfileRouters,
@@ -20,10 +29,6 @@ const routes: IRoute[] = [
     path: "/bookings",
     route: BookingRouters,
   },
-  {
-    path: "/users",
-    route: UserRouters,
-  }
 ];
 
 routes.forEach((route) => {
