@@ -6,17 +6,11 @@ import { PaginationOptions } from "../../interfaces";
 import PaginationHelper from "../../helpers/Pagination";
 
 const createBooking = catchAsync(async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized",
-    });
-  }
-  const studentId = req.user.id;
+  const studentId = req.user!.id; // req.user is guaranteed by auth middleware
   const { currentTime, todayDate, ...bookingData } = req.body;
 
   const data = await BookingServices.createBooking(
-    studentId as string,
+    studentId,
     bookingData,
     currentTime as string | undefined,
     todayDate as string | undefined,

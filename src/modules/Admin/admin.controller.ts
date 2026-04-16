@@ -4,6 +4,8 @@ import { UserRole, UserStatus } from "../../../generated/prisma/client";
 import PaginationHelper from "../../helpers/Pagination";
 import { PaginationOptions } from "../../interfaces";
 import { catchAsync } from "../../utils/catchAsync";
+import createAppError from "../../errors/appError";
+import { Status } from "../../errors/httpStatus";
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const search = req.query.search ? String(req.query.search) : undefined;
@@ -39,10 +41,10 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
   const { status } = req.body;
 
   if (!status) {
-    return res.status(400).json({
-      success: false,
-      message: "You can update only the status field",
-    });
+    throw createAppError(
+      "You can update only the status field",
+      Status.BAD_REQUEST,
+    );
   }
 
   const data = await AdminServices.updateUser(id, status);
