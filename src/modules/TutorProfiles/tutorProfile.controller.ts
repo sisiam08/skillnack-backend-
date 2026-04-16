@@ -220,6 +220,17 @@ const getDefaultClassLink = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getTutorStats = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const data = await TutorProfileServices.getTutorStats(userId!);
+
+  res.status(200).json({
+    success: true,
+    message: "Tutor stats retrieved successfully",
+    data,
+  });
+});
+
 export const TutorProfileControllers = {
   createProfile,
   getAllProfiles,
@@ -234,4 +245,5 @@ export const TutorProfileControllers = {
   getBookingSessions,
   setDefaultClassLink,
   getDefaultClassLink,
+  getTutorStats,
 };

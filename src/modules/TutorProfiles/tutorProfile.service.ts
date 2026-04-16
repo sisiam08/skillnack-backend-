@@ -596,6 +596,184 @@ const getDefaultClassLink = async (userId: string) => {
   return { defaultClassLink: tutorProfile.defaultClassLink };
 };
 
+const getTutorStats = async (userId: string) => {
+  const today = startOfDay(new Date());
+  const currentMonthStart = startOfMonth(new Date());
+  const currentWeekStart = startOfWeek(new Date());
+
+  return await prisma.$transaction(async (tx) => {
+    const tutorProfile = await tx.tutorProfiles.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        totalRating: true,
+        totalReviews: true,
+        hourlyRate: true,
+        experienceYears: true,
+      },
+    });
+
+    if (!tutorProfile) {
+      throw new Error("Tutor profile not found");
+    }
+
+    const tutorId = tutorProfile.id as string;
+
+    const bookingsPrice = await tx.bookings.findMany({
+      where: {
+        tutorId,
+        status: "COMPLETED",
+      },
+      select: {
+        price: true,
+        sessionDate: true,
+      },
+    });
+
+    const earningsPerBooking = bookingsPrice.map((booking) => ({
+      earnings: booking.price * 0.9,
+      sessionDate: booking.sessionDate,
+    }));
+
+    const [
+      totalEarnings,
+      monthlyEarnings,
+      todayEarnings,
+      totalUniqueStudents,
+      activeAvailableDays,
+      totalRatings,
+      averageRating,
+      totalReviews,
+      completedSessions,
+      todayCompletedSessions,
+      weeklyCompletedSessions,
+      canceledSessions,
+      monthlyCanceledSessions,
+      confirmedSessions,
+    ] = await Promise.all([
+      // Total Earnings
+      earningsPerBooking.reduce(
+        (accumulator, currentbooking) => accumulator + currentbooking.earnings,
+        0,
+      ),
+
+      // Monthly Earnings
+      earningsPerBooking
+        .filter((booking) => booking.sessionDate > currentMonthStart)
+        .reduce(
+          (accumulator, currentbooking) =>
+            accumulator + currentbooking.earnings,
+          0,
+        ),
+
+      // Today's Earnings
+      earningsPerBooking
+        .filter((booking) => booking.sessionDate == today)
+        .reduce(
+          (accumulator, currentbooking) =>
+            accumulator + currentbooking.earnings,
+          0,
+        ),
+
+      // Total Unique Students
+      tx.bookings.findMany({
+        where: {
+          tutorId,
+          status: BookingStatus.COMPLETED,
+        },
+        distinct: ["studentId"],
+        select: { studentId: true },
+      }),
+
+      // Active Available Days
+      tx.tutorAvailability.findMany({
+        where: { tutorId, isActive: true },
+        distinct: ["dayOfWeek"],
+        select: { dayOfWeek: true },
+      }),
+
+      // Total Ratings
+      tutorProfile.totalRating,
+
+      // Average Rating
+      tutorProfile.totalRating /
+        (tutorProfile.totalReviews ? tutorProfile.totalReviews : 1),
+
+      // Total Reviews
+      tutorProfile.totalReviews,
+
+      // Total Completed Sessions
+      tx.bookings.count({
+        where: { tutorId, status: BookingStatus.COMPLETED },
+      }),
+
+      // Today's Completed Sessions
+      tx.bookings.count({
+        where: {
+          tutorId,
+          status: BookingStatus.COMPLETED,
+          sessionDate: {
+            equals: today,
+          },
+        },
+      }),
+
+      // Weekly Completed Sessions
+      tx.bookings.count({
+        where: {
+          tutorId,
+          status: BookingStatus.COMPLETED,
+          sessionDate: { gte: currentWeekStart },
+        },
+      }),
+
+      // Canceled Sessions
+      tx.bookings.count({
+        where: { tutorId, status: BookingStatus.CANCELLED },
+      }),
+
+      // Monthly Canceled Sessions
+      tx.bookings.count({
+        where: {
+          tutorId,
+          status: BookingStatus.CANCELLED,
+          sessionDate: { gte: currentMonthStart },
+        },
+      }),
+
+      // Confirmed Sessions
+      tx.bookings.count({
+        where: { tutorId, status: BookingStatus.CONFIRMED },
+      }),
+    ]);
+
+    return {
+      earnings: {
+        totalEarnings: totalEarnings ?? 0,
+        earningsThisMonth: monthlyEarnings ?? 0,
+        earningsToday: todayEarnings ?? 0,
+        hourlyRate: tutorProfile.hourlyRate,
+      },
+      profile: {
+        uniqueStudents: totalUniqueStudents.length,
+        experienceYears: tutorProfile.experienceYears,
+        activeDays: activeAvailableDays.length,
+        averageRating,
+        totalRatings,
+        reviewCount: totalReviews,
+      },
+      sessions: {
+        completed: completedSessions,
+        completedToday: todayCompletedSessions,
+        completedThisWeek: weeklyCompletedSessions,
+        cancelled: canceledSessions,
+        cancelledThisMonth: monthlyCanceledSessions,
+        upcoming: confirmedSessions,
+      },
+    };
+  });
+};
+
 export const TutorProfileServices = {
   createProfile,
   getAllProfiles,
@@ -610,4 +788,5 @@ export const TutorProfileServices = {
   getBookingSessions,
   setDefaultClassLink,
   getDefaultClassLink,
+  getTutorStats,
 };

@@ -31,6 +31,12 @@ router.get(
   TutorProfileControllers.getDefaultClassLink,
 );
 
+router.get(
+  "/stats",
+  auth_middleware([UserRole.TUTOR]),
+  TutorProfileControllers.getTutorStats,
+);
+
 router.get("/:id", TutorProfileControllers.getProfileById);
 
 router.patch(
