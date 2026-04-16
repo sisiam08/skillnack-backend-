@@ -2,6 +2,7 @@ import { Router } from "express";
 import { IRoute } from "../interfaces";
 import { TutorProfileRouters } from "../modules/TutorProfiles/tutorProfile.router";
 import { CategoryRouters } from "../modules/Categories/category.router";
+import { BookingRouters } from "../modules/Bookings/booking.router";
 
 const router = Router();
 
@@ -14,6 +15,10 @@ const routes: IRoute[] = [
     path: "/categories",
     route: CategoryRouters,
   },
+  {
+    path: "/bookings",
+    route: BookingRouters,
+  }
 ];
 
 routes.forEach((route) => {
