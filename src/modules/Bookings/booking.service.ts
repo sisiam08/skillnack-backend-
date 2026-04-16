@@ -273,9 +273,54 @@ const getMyBookings = async (
   });
 };
 
+const getBookingDetails = async (bookingId: string) => {
+  return await prisma.bookings.findUnique({
+    where: {
+      id: bookingId,
+    },
+    include: {
+      tutor: {
+        include: {
+          user: true,
+          category: true,
+        },
+      },
+      reviews: true,
+    },
+  });
+};
+
+const updateBookingStatus = async (
+  userId: string,
+  userRole: UserRole,
+  bookingId: string,
+  status: BookingStatus,
+) => {
+  return await prisma.$transaction(async (tx) => {
+    if (userRole === UserRole.TUTOR) {
+      await tx.tutorProfiles.update({
+        where: {
+          userId,
+        },
+        data: {
+          totalCompletedBookings: {
+            increment: 1,
+          },
+        },
+      });
+    }
+
+    return await tx.bookings.update({
+      where: { id: bookingId },
+      data: { status },
+    });
+  });
+};
+
 export const BookingServices = {
   createBooking,
   getAllBookings,
   getMyBookings,
-
+  getBookingDetails,
+  updateBookingStatus,
 };

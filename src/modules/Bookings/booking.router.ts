@@ -23,4 +23,16 @@ router.get(
   BookingControllers.getMyBookings,
 );
 
+router.get(
+  "/:id",
+  auth_middleware([UserRole.ADMIN, UserRole.STUDENT]),
+  BookingControllers.getBookingDetails,
+);
+
+router.patch(
+  "/:id",
+  auth_middleware([UserRole.TUTOR, UserRole.STUDENT]),
+  BookingControllers.updateBookingStatus,
+);
+
 export const BookingRouters = router;
