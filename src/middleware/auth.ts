@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { UserRole } from "../../generated/prisma/enums";
 import { auth } from "../lib/auth";
+import { Status } from "../errors/httpStatus";
 
 export const auth_middleware = (role: UserRole[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -9,9 +10,8 @@ export const auth_middleware = (role: UserRole[]) => {
         headers: req.headers as any,
       });
 
-
       if (!session || !session.user) {
-        res.status(401).json({
+        res.status(Status.UNAUTHORIZED).json({
           success: false,
           message: "Unauthorized",
         });
@@ -19,7 +19,7 @@ export const auth_middleware = (role: UserRole[]) => {
       }
 
       if (!session.user.emailVerified) {
-        res.status(403).json({
+        res.status(Status.FORBIDDEN).json({
           success: false,
           message: "You need to verify your email to access this resource",
         });
@@ -27,7 +27,7 @@ export const auth_middleware = (role: UserRole[]) => {
       }
 
       if (role.length && !role.includes(session.user.role as UserRole)) {
-        res.status(403).json({
+        res.status(Status.FORBIDDEN).json({
           success: false,
           message: "You don't have permission to access this resource",
         });

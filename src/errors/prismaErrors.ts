@@ -1,16 +1,17 @@
 import { Prisma } from "../../generated/prisma/client";
 import { IErrorSource } from "../interfaces";
+import { Status } from "./httpStatus";
 
 export const handlePrismaError = (
   err: Prisma.PrismaClientKnownRequestError,
 ) => {
-  let statusCode = 400;
+  let statusCode: number = Status.BAD_REQUEST;
   let message = "Database request error";
   let errorSource: IErrorSource[] = [];
 
   // P2002: Unique constraint violation
   if (err.code === "P2002") {
-    statusCode = 409;
+    statusCode = Status.CONFLICT;
     message = "Unique constraint violation";
     const target = (err.meta?.target as string[]) || [];
     errorSource = [
@@ -22,7 +23,7 @@ export const handlePrismaError = (
   }
   // P2025: Record not found
   else if (err.code === "P2025") {
-    statusCode = 404;
+    statusCode = Status.NOT_FOUND;
     message = "Record not found";
     errorSource = [
       {
@@ -51,7 +52,7 @@ export const handlePrismaError = (
 export const handlePrismaValidationError = (
   err: Prisma.PrismaClientValidationError,
 ) => {
-  const statusCode = 400;
+  const statusCode = Status.BAD_REQUEST;
   const message = "Validation error";
   const errorSource: IErrorSource[] = [];
 
@@ -94,7 +95,7 @@ export const handlePrismaValidationError = (
 export const handlePrismaInitializationError = (
   err: Prisma.PrismaClientInitializationError,
 ) => {
-  const statusCode = 500;
+  const statusCode = Status.INTERNAL_SERVER_ERROR;
   const message = "Database initialization error";
   const errorSource: IErrorSource[] = [
     {

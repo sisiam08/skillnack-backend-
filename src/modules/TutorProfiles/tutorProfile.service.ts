@@ -25,6 +25,8 @@ import {
 } from "../../helpers/TimeHelpers";
 import { prisma } from "../../lib/prisma";
 import { refreshBookingData } from "../../helpers/RefreshBookingData";
+import createAppError from "../../errors/appError";
+import { Status } from "../../errors/httpStatus";
 
 const createProfile = async (tutorData: TutorProfilesCreateInput) => {
   return await prisma.tutorProfiles.create({
@@ -268,7 +270,7 @@ const setAvailability = async (
   const EndMin = timeToMinutes(endTime);
 
   if (EndMin <= StartMin) {
-    throw new Error("Invalid time range");
+    throw createAppError("Invalid time range", Status.BAD_REQUEST);
   }
 
   const tutorProfile = await prisma.tutorProfiles.findUnique({
@@ -277,7 +279,7 @@ const setAvailability = async (
   });
 
   if (!tutorProfile) {
-    throw new Error("Tutor profile not found");
+    throw createAppError("Tutor profile not found", Status.NOT_FOUND);
   }
 
   const tutorId = tutorProfile.id;
@@ -290,7 +292,7 @@ const setAvailability = async (
   });
 
   if (isOverlapping({ startTime, endTime }, exixtingSlots)) {
-    throw new Error("Overlapping availability slots");
+    throw createAppError("Overlapping availability slots", Status.CONFLICT);
   }
 
   return await prisma.tutorAvailability.create({
@@ -334,7 +336,7 @@ const getAvailableSlots = async (
   });
 
   if (!tutorSlots.length) {
-    throw new Error("Tutor not available on this day");
+    throw createAppError("Tutor not available on this day", Status.BAD_REQUEST);
   }
 
   const bookedSlots = await prisma.bookings.findMany({
@@ -402,7 +404,7 @@ const getAvailableSlots = async (
   });
 
   if (!tutor) {
-    throw new Error("Tutor not found");
+    throw createAppError("Tutor not found", Status.NOT_FOUND);
   }
 
   const price = calculateTutionPrice(slotDuration, tutor.hourlyRate);
@@ -427,7 +429,7 @@ const updateAvailability = async (
     const EndMin = timeToMinutes(endTime);
 
     if (EndMin <= StartMin) {
-      throw new Error("Invalid time range");
+      throw createAppError("Invalid time range", Status.BAD_REQUEST);
     }
 
     const tutorProfile = await prisma.tutorProfiles.findUnique({
@@ -436,7 +438,7 @@ const updateAvailability = async (
     });
 
     if (!tutorProfile) {
-      throw new Error("Tutor profile not found");
+      throw createAppError("Tutor profile not found", Status.NOT_FOUND);
     }
 
     const tutorId = tutorProfile.id;
@@ -449,7 +451,7 @@ const updateAvailability = async (
     });
 
     if (isOverlapping({ startTime, endTime }, exixtingSlots)) {
-      throw new Error("Overlapping availability slots");
+      throw createAppError("Overlapping availability slots", Status.CONFLICT);
     }
   }
 
@@ -480,7 +482,7 @@ const getBookingSessions = async (
   });
 
   if (!tutorProfile) {
-    throw new Error("Tutor profile not found");
+    throw createAppError("Tutor profile not found", Status.NOT_FOUND);
   }
 
   const andConditions: any = { tutorId: tutorProfile.id };
@@ -553,7 +555,7 @@ const setDefaultClassLink = async (
     select: { id: true },
   });
   if (!tutorProfile) {
-    throw new Error("Tutor profile not found");
+    throw createAppError("Tutor profile not found", Status.NOT_FOUND);
   }
   return await prisma.tutorProfiles.update({
     where: { id: tutorProfile.id },
@@ -567,7 +569,7 @@ const getDefaultClassLink = async (userId: string) => {
     select: { defaultClassLink: true },
   });
   if (!tutorProfile) {
-    throw new Error("Tutor profile not found");
+    throw createAppError("Tutor profile not found", Status.NOT_FOUND);
   }
   return { defaultClassLink: tutorProfile.defaultClassLink };
 };
@@ -592,7 +594,7 @@ const getTutorStats = async (userId: string) => {
     });
 
     if (!tutorProfile) {
-      throw new Error("Tutor profile not found");
+      throw createAppError("Tutor profile not found", Status.NOT_FOUND);
     }
 
     const tutorId = tutorProfile.id as string;
@@ -759,7 +761,7 @@ const getWeeklyEarnings = async (userId: string) => {
   });
 
   if (!tutorProfile) {
-    throw new Error("Tutor profile not found");
+    throw createAppError("Tutor profile not found", Status.NOT_FOUND);
   }
 
   const currentWeekStart = startOfWeek(new Date());
@@ -802,14 +804,17 @@ const sendClassLink = async (bookingId: string, classLink: string) => {
   });
 
   if (!bookings) {
-    throw new Error("Booking not found");
+    throw createAppError("Booking not found", Status.NOT_FOUND);
   }
 
   if (
     bookings.sessionDate > today ||
     (isEqual(bookings.sessionDate, today) && bookings.startTime > currentTime)
   ) {
-    throw new Error("Cannot send class link before the session time starts.");
+    throw createAppError(
+      "Cannot send class link before the session time starts.",
+      Status.BAD_REQUEST,
+    );
   }
 
   return await prisma.bookings.update({

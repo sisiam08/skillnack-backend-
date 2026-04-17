@@ -1,4 +1,6 @@
 import { prisma } from "../../lib/prisma";
+import createAppError from "../../errors/appError";
+import { Status } from "../../errors/httpStatus";
 
 const createReview = async (reviewData: {
   bookingId: string;
@@ -12,7 +14,7 @@ const createReview = async (reviewData: {
     });
 
     if (!booking) {
-      throw new Error("Booking not found");
+      throw createAppError("Booking not found", Status.NOT_FOUND);
     }
 
     await tx.tutorProfiles.update({

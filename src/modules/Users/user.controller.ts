@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserServices } from "./user.service";
 import { catchAsync } from "../../utils/catchAsync";
+import { Status } from "../../errors/httpStatus";
 
 const updateMe = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id as string;
@@ -19,7 +20,7 @@ const updateMe = catchAsync(async (req: Request, res: Response) => {
 
   const data = await UserServices.updateMe(userId, updateData);
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Profile updated successfully",
     data,

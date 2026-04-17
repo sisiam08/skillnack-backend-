@@ -4,6 +4,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { BookingStatus, UserRole } from "../../../generated/prisma/enums";
 import { PaginationOptions } from "../../interfaces";
 import PaginationHelper from "../../helpers/Pagination";
+import { Status } from "../../errors/httpStatus";
 
 const createBooking = catchAsync(async (req: Request, res: Response) => {
   const studentId = req.user!.id;
@@ -16,9 +17,9 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
     todayDate as string | undefined,
   );
 
-  return res.status(201).json({
+  return res.status(Status.CREATED).json({
     success: true,
-    message: "Booking pending",
+    message: "Booking pending...",
     data,
   });
 });
@@ -32,7 +33,7 @@ const getAllBookings = catchAsync(async (req: Request, res: Response) => {
 
   const data = await BookingServices.getAllBookings(status, page, limit, skip);
 
-  return res.status(200).json({
+  return res.status(Status.OK).json({
     success: true,
     message: "Bookings retrieved successfully",
     data,
@@ -55,7 +56,7 @@ const getMyBookings = catchAsync(async (req: Request, res: Response) => {
     skip,
   );
 
-  return res.status(200).json({
+  return res.status(Status.OK).json({
     success: true,
     message: "Bookings retrieved successfully",
     data,
@@ -67,13 +68,13 @@ const getBookingDetails = catchAsync(async (req: Request, res: Response) => {
   const data = await BookingServices.getBookingDetails(bookingId as string);
 
   if (!data) {
-    return res.status(404).json({
+    return res.status(Status.NOT_FOUND).json({
       success: false,
       message: "Booking not found",
     });
   }
 
-  return res.status(200).json({
+  return res.status(Status.OK).json({
     success: true,
     message: "Booking details retrieved successfully",
     data,
@@ -92,12 +93,12 @@ const updateBookingStatus = catchAsync(async (req: Request, res: Response) => {
     status,
   );
   if (!data) {
-    return res.status(404).json({
+    return res.status(Status.NOT_FOUND).json({
       success: false,
       message: "Booking not found",
     });
   }
-  return res.status(200).json({
+  return res.status(Status.OK).json({
     success: true,
     message: "Booking status updated successfully",
     data,

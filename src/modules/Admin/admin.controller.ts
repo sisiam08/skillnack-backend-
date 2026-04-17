@@ -29,7 +29,7 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
     skip,
   );
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Users retrieved successfully",
     data,
@@ -49,7 +49,7 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
 
   const data = await AdminServices.updateUser(id, status);
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "User updated successfully",
     data,
@@ -59,7 +59,7 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
 const getStats = catchAsync(async (req: Request, res: Response) => {
   const data = await AdminServices.getStats();
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Stats retrieved successfully",
     data,

@@ -2,11 +2,13 @@ import {
   uploadFileToCloudinary,
   deleteFileFromCloudinary,
 } from "../../config/cloudinary.config";
+import createAppError from "../../errors/appError";
+import { Status } from "../../errors/httpStatus";
 
 const uploadImage = async (file: Express.Multer.File) => {
   try {
     if (!file) {
-      throw new Error("No file provided for upload");
+      throw createAppError("No file provided for upload", Status.BAD_REQUEST);
     }
 
     const result = await uploadFileToCloudinary(file.buffer, file.originalname);
@@ -19,7 +21,10 @@ const uploadImage = async (file: Express.Multer.File) => {
 const deleteImage = async (imageUrl: string) => {
   try {
     if (!imageUrl) {
-      throw new Error("No image URL provided for deletion");
+      throw createAppError(
+        "No image URL provided for deletion",
+        Status.BAD_REQUEST,
+      );
     }
 
     await deleteFileFromCloudinary(imageUrl);

@@ -11,6 +11,8 @@ import { prisma } from "../../lib/prisma";
 import { stripe } from "../../config/stripe.config";
 import config from "../../config";
 import { refreshBookingData } from "../../helpers/RefreshBookingData";
+import createAppError from "../../errors/appError";
+import { Status } from "../../errors/httpStatus";
 
 const createBooking = async (
   studentId: string,
@@ -41,11 +43,17 @@ const createBooking = async (
     });
 
     if (!availabilitySlots.length) {
-      throw new Error("Tutor not available on this day");
+      throw createAppError(
+        "Tutor not available on this day",
+        Status.BAD_REQUEST,
+      );
     }
 
     if (!fitsInAvailabilitySlot({ startTime, endTime }, availabilitySlots)) {
-      throw new Error("Selected time outside of tutor availability");
+      throw createAppError(
+        "Selected time outside of tutor availability",
+        Status.BAD_REQUEST,
+      );
     }
 
     const existingTutorBookings = await tx.bookings.findMany({
@@ -61,7 +69,7 @@ const createBooking = async (
     });
 
     if (isOverlapping({ startTime, endTime }, existingTutorBookings)) {
-      throw new Error("Slot already booked");
+      throw createAppError("Slot already booked", Status.CONFLICT);
     }
 
     const existingMyBookings = await tx.bookings.findMany({
@@ -77,7 +85,10 @@ const createBooking = async (
     });
 
     if (isOverlapping({ startTime, endTime }, existingMyBookings)) {
-      throw new Error("Already you book this slot with another tutor.");
+      throw createAppError(
+        "Already you book this slot with another tutor.",
+        Status.CONFLICT,
+      );
     }
 
     const tutor = await tx.tutorProfiles.findUnique({
@@ -93,7 +104,7 @@ const createBooking = async (
     });
 
     if (!tutor) {
-      throw new Error("Tutor not found");
+      throw createAppError("Tutor not found", Status.NOT_FOUND);
     }
 
     const price = calculateTutionPrice(slotDuration, tutor.hourlyRate);
@@ -130,7 +141,7 @@ const createBooking = async (
             currency: "bdt",
             product_data: {
               name: "Session Booking",
-              description: `Session with ${tutor.user.name}\nDate: ${sessionDate}\nTime: ${startTime} - ${endTime}`,
+              description: `Session with ${tutor.user.name} | Date: ${sessionDate} | Time: ${startTime} - ${endTime}`,
             },
             unit_amount: price * 100,
           },

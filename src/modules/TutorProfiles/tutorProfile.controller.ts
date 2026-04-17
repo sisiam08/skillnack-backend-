@@ -5,11 +5,12 @@ import { PaginationOptions, SortingOptions } from "../../interfaces";
 import PaginationHelper from "../../helpers/Pagination";
 import SortingHelper from "../../helpers/Sorting";
 import { BookingStatus } from "../../../generated/prisma/enums";
+import { Status } from "../../errors/httpStatus";
 
 const createProfile = catchAsync(async (req: Request, res: Response) => {
   const data = await TutorProfileServices.createProfile(req.body);
 
-  res.status(201).json({
+  res.status(Status.CREATED).json({
     success: true,
     message: "Profile created successfully",
     data,
@@ -54,7 +55,7 @@ const getAllProfiles = catchAsync(async (req: Request, res: Response) => {
     availability,
   );
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Profiles retrieved successfully",
     data,
@@ -64,7 +65,7 @@ const getAllProfiles = catchAsync(async (req: Request, res: Response) => {
 const getProfileById = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const data = await TutorProfileServices.getProfileById(id);
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Profile details retrieved successfully",
     data,
@@ -74,7 +75,7 @@ const getProfileById = catchAsync(async (req: Request, res: Response) => {
 const getMyProfile = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id as string;
   const data = await TutorProfileServices.getMyProfile(userId);
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Profile details retrieved successfully",
     data,
@@ -84,7 +85,7 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id as string;
   const data = await TutorProfileServices.updateProfile(userId, req.body);
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Profile updated successfully",
     data,
@@ -97,7 +98,7 @@ const setAvailability = catchAsync(async (req: Request, res: Response) => {
 
   const data = await TutorProfileServices.setAvailability(userId, availability);
 
-  res.status(201).json({
+  res.status(Status.CREATED).json({
     success: true,
     message: "Availability set successfully",
     data,
@@ -110,7 +111,7 @@ const getAvailability = catchAsync(async (req: Request, res: Response) => {
   const tutorProfile = await TutorProfileServices.getProfileById(tutorId);
 
   if (req.user?.role === "TUTOR" && req.user?.id !== tutorProfile?.user.id) {
-    return res.status(403).json({
+    return res.status(Status.FORBIDDEN).json({
       success: false,
       message: "You dont have permission to view other tutor's availability",
     });
@@ -118,7 +119,7 @@ const getAvailability = catchAsync(async (req: Request, res: Response) => {
 
   const data = await TutorProfileServices.getAvailability(tutorId);
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Availability retrieved successfully",
     data,
@@ -135,7 +136,7 @@ const getAvailableSlots = catchAsync(async (req: Request, res: Response) => {
     Number(slotDuration),
   );
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Available slots retrieved successfully",
     data,
@@ -153,7 +154,7 @@ const updateAvailability = catchAsync(async (req: Request, res: Response) => {
     availability,
   );
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Availability updated successfully",
     data,
@@ -165,7 +166,7 @@ const deleteAvailability = catchAsync(async (req: Request, res: Response) => {
 
   const data = await TutorProfileServices.deleteAvailability(id);
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Availability deleted successfully",
     data,
@@ -187,7 +188,7 @@ const getBookingSessions = catchAsync(async (req: Request, res: Response) => {
     limit,
     skip,
   );
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Sessions retrieved successfully",
     data,
@@ -202,7 +203,7 @@ const setDefaultClassLink = catchAsync(async (req: Request, res: Response) => {
     defaultClassLink,
   );
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Default class link set successfully",
     data,
@@ -213,7 +214,7 @@ const getDefaultClassLink = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id as string;
   const data = await TutorProfileServices.getDefaultClassLink(userId);
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Default class link retrieved successfully",
     data,
@@ -224,7 +225,7 @@ const getTutorStats = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id as string;
   const data = await TutorProfileServices.getTutorStats(userId!);
 
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Tutor stats retrieved successfully",
     data,
@@ -234,7 +235,7 @@ const getTutorStats = catchAsync(async (req: Request, res: Response) => {
 const getWeeklyEarnings = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id as string;
   const data = await TutorProfileServices.getWeeklyEarnings(userId!);
-  res.status(200).json({
+  res.status(Status.OK).json({
     success: true,
     message: "Weekly earnings retrieved successfully",
     data,
@@ -249,12 +250,12 @@ const sendClassLink = catchAsync(async (req: Request, res: Response) => {
     classLink as string,
   );
   if (!data) {
-    return res.status(404).json({
+    return res.status(Status.NOT_FOUND).json({
       success: false,
       message: "Booking not found",
     });
   }
-  return res.status(200).json({
+  return res.status(Status.OK).json({
     success: true,
     message: "Class link sent successfully",
     data,

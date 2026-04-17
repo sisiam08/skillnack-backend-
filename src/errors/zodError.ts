@@ -1,12 +1,13 @@
 import { ZodError } from "zod";
 import { IErrorSource } from "../interfaces";
+import { Status } from "./httpStatus";
 
 /**
  * Handle Zod validation errors and format them consistently
  * Returns status code, message, and detailed error sources
  */
 export const handleZodError = (err: ZodError<unknown>) => {
-  const statusCode = 400;
+  const statusCode = Status.BAD_REQUEST;
   const message = "Validation Error";
 
   const errorSource: IErrorSource[] = err.issues.map((issue: any) => {

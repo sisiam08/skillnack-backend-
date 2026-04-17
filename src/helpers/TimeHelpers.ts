@@ -1,12 +1,14 @@
-import {
-  format,
-  formatDistanceToNow,
-} from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+import createAppError from "../errors/appError";
+import { Status } from "../errors/httpStatus";
 
 export const timeToMinutes = (time: string) => {
   const [h, m] = time.split(":").map(Number);
   if (h === undefined || m === undefined) {
-    throw new Error("Invalid time format. Expected HH:MM");
+    throw createAppError(
+      "Invalid time format. Expected HH:MM",
+      Status.BAD_REQUEST,
+    );
   }
   return h * 60 + m;
 };
@@ -78,7 +80,7 @@ export const fitsInAvailabilitySlot = (
   const bookingEnd = timeToMinutes(newBooking.endTime);
 
   if (bookingEnd <= bookingStart) {
-    throw new Error("Invalid time range");
+    throw createAppError("Invalid time range", Status.BAD_REQUEST);
   }
 
   return availabilitySlots.some((slot) => {
@@ -114,7 +116,10 @@ export const validateBookingDateTime = (
     const sessionDateStr = format(sessionDate, "yyyy-MM-dd");
 
     if (todayDate && sessionDateStr < todayDate) {
-      throw new Error("Cannot see/book previous date slot!");
+      throw createAppError(
+        "Cannot see/book previous date slot!",
+        Status.BAD_REQUEST,
+      );
     }
 
     if (startTime && todayDate && sessionDateStr === todayDate && currentTime) {
@@ -122,7 +127,10 @@ export const validateBookingDateTime = (
       const bookingStartMinutes = timeToMinutes(startTime);
 
       if (bookingStartMinutes <= currentMinutes) {
-        throw new Error("Cannot see/book previous slot!");
+        throw createAppError(
+          "Cannot see/book previous slot!",
+          Status.BAD_REQUEST,
+        );
       }
     }
   }
