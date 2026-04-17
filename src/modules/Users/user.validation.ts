@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-
 export const updateUserValidationSchema = z.object({
   body: z.object({
     name: z.string().min(1, "Name cannot be empty").optional(),
@@ -9,6 +8,4 @@ export const updateUserValidationSchema = z.object({
       .min(10, "Phone must be at least 10 characters")
       .optional(),
   }),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
 });

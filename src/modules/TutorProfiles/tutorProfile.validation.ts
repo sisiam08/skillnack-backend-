@@ -10,8 +10,6 @@ export const createTutorProfileValidationSchema = z.object({
     category: z.string().optional(),
     description: z.string().optional(),
   }),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
 });
 
 export const updateTutorProfileValidationSchema = z.object({
@@ -24,8 +22,6 @@ export const updateTutorProfileValidationSchema = z.object({
     category: z.string().optional(),
     description: z.string().optional(),
   }),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
 });
 
 export const getAllTutorProfilesValidationSchema = z.object({
@@ -46,23 +42,18 @@ export const getAllTutorProfilesValidationSchema = z.object({
 });
 
 export const getTutorProfileByIdValidationSchema = z.object({
-  body: z.object({}).optional(),
   params: z.object({
     id: z.string().min(1, "Tutor ID is required"),
   }),
-  query: z.object({}).optional(),
 });
 
 export const getTutorAvailabilityValidationSchema = z.object({
-  body: z.object({}).optional(),
   params: z.object({
     id: z.string().min(1, "Tutor ID is required"),
   }),
-  query: z.object({}).optional(),
 });
 
 export const getAvailableSlotsValidationSchema = z.object({
-  body: z.object({}).optional(),
   params: z.object({
     id: z.string().min(1, "Tutor ID is required"),
   }),
@@ -78,8 +69,6 @@ export const setAvailabilityValidationSchema = z.object({
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
   }),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
 });
 
 export const updateAvailabilityValidationSchema = z.object({
@@ -91,15 +80,12 @@ export const updateAvailabilityValidationSchema = z.object({
   params: z.object({
     id: z.string().min(1, "Availability ID is required"),
   }),
-  query: z.object({}).optional(),
 });
 
 export const deleteAvailabilityValidationSchema = z.object({
-  body: z.object({}).optional(),
   params: z.object({
     id: z.string().min(1, "Availability ID is required"),
   }),
-  query: z.object({}).optional(),
 });
 
 export const sendClassLinkValidationSchema = z.object({
@@ -122,13 +108,9 @@ export const setDefaultClassLinkValidationSchema = z.object({
       .min(1, "Default class link is required")
       .url("Must be a valid URL"),
   }),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
 });
 
 export const getBookingSessionsValidationSchema = z.object({
-  body: z.object({}).optional(),
-  params: z.object({}).optional(),
   query: z.object({
     status: z
       .enum(["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"])
@@ -136,28 +118,4 @@ export const getBookingSessionsValidationSchema = z.object({
     page: z.string().optional(),
     limit: z.string().optional(),
   }),
-});
-
-export const getTutorStatsValidationSchema = z.object({
-  body: z.object({}).optional(),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
-});
-
-export const getWeeklyEarningsValidationSchema = z.object({
-  body: z.object({}).optional(),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
-});
-
-export const getMyProfileValidationSchema = z.object({
-  body: z.object({}).optional(),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
-});
-
-export const getDefaultClassLinkValidationSchema = z.object({
-  body: z.object({}).optional(),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
 });

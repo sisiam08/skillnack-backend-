@@ -7,7 +7,6 @@ import {
   createCategoryValidationSchema,
   updateCategoryValidationSchema,
   deleteCategoryValidationSchema,
-  getAllCategoriesValidationSchema,
 } from "./category.validation";
 
 const router = express.Router();
@@ -19,11 +18,7 @@ router.post(
   CategoryControllers.createCategory,
 );
 
-router.get(
-  "/",
-  validateRequest(getAllCategoriesValidationSchema),
-  CategoryControllers.getAllCategories,
-);
+router.get("/", CategoryControllers.getAllCategories);
 
 router.patch(
   "/:id",

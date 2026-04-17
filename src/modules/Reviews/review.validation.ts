@@ -9,13 +9,9 @@ export const createReviewValidationSchema = z.object({
       .max(5, "Rating cannot exceed 5"),
     comment: z.string().optional(),
   }),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
 });
 
 export const getAllReviewsValidationSchema = z.object({
-  body: z.object({}).optional(),
-  params: z.object({}).optional(),
   query: z.object({
     page: z.string().optional(),
     limit: z.string().optional(),
@@ -23,7 +19,6 @@ export const getAllReviewsValidationSchema = z.object({
 });
 
 export const getTutorReviewsValidationSchema = z.object({
-  body: z.object({}).optional(),
   params: z.object({
     id: z.string().min(1, "Tutor ID is required"),
   }),

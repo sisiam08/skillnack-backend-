@@ -16,10 +16,6 @@ import {
   sendClassLinkValidationSchema,
   setDefaultClassLinkValidationSchema,
   getBookingSessionsValidationSchema,
-  getTutorStatsValidationSchema,
-  getWeeklyEarningsValidationSchema,
-  getMyProfileValidationSchema,
-  getDefaultClassLinkValidationSchema,
 } from "./tutorProfile.validation";
 
 const router = Router();
@@ -40,7 +36,6 @@ router.get(
 router.get(
   "/profile",
   auth_middleware([UserRole.TUTOR]),
-  validateRequest(getMyProfileValidationSchema),
   TutorProfileControllers.getMyProfile,
 );
 
@@ -54,21 +49,18 @@ router.get(
 router.get(
   "/defaultClassLink",
   auth_middleware([UserRole.TUTOR]),
-  validateRequest(getDefaultClassLinkValidationSchema),
   TutorProfileControllers.getDefaultClassLink,
 );
 
 router.get(
   "/stats",
   auth_middleware([UserRole.TUTOR]),
-  validateRequest(getTutorStatsValidationSchema),
   TutorProfileControllers.getTutorStats,
 );
 
 router.get(
   "/weeklyEarnings",
   auth_middleware([UserRole.TUTOR]),
-  validateRequest(getWeeklyEarningsValidationSchema),
   TutorProfileControllers.getWeeklyEarnings,
 );
 

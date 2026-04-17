@@ -8,13 +8,9 @@ export const createBookingValidationSchema = z.object({
     currentTime: z.string().optional(),
     todayDate: z.string().optional(),
   }),
-  params: z.object({}).optional(),
-  query: z.object({}).optional(),
 });
 
 export const getAllBookingsValidationSchema = z.object({
-  body: z.object({}).optional(),
-  params: z.object({}).optional(),
   query: z.object({
     status: z
       .enum(["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"])
@@ -25,11 +21,9 @@ export const getAllBookingsValidationSchema = z.object({
 });
 
 export const getBookingDetailsValidationSchema = z.object({
-  body: z.object({}).optional(),
   params: z.object({
     id: z.string().min(1, "Booking ID is required"),
   }),
-  query: z.object({}).optional(),
 });
 
 export const updateBookingStatusValidationSchema = z.object({
@@ -41,5 +35,4 @@ export const updateBookingStatusValidationSchema = z.object({
   params: z.object({
     id: z.string().min(1, "Booking ID is required"),
   }),
-  query: z.object({}).optional(),
 });

@@ -6,7 +6,6 @@ import { AdminControllers } from "./admin.controller";
 import {
   getAllUsersValidationSchema,
   updateUserStatusValidationSchema,
-  getAdminStatsValidationSchema,
 } from "./admin.validation";
 
 const router = express.Router();
@@ -28,7 +27,6 @@ router.patch(
 router.get(
   "/stats",
   auth_middleware([UserRole.ADMIN]),
-  validateRequest(getAdminStatsValidationSchema),
   AdminControllers.getStats,
 );
 
