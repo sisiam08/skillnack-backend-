@@ -6,7 +6,7 @@ import { PaginationOptions } from "../../interfaces";
 import PaginationHelper from "../../helpers/Pagination";
 
 const createBooking = catchAsync(async (req: Request, res: Response) => {
-  const studentId = req.user!.id; // req.user is guaranteed by auth middleware
+  const studentId = req.user!.id;
   const { currentTime, todayDate, ...bookingData } = req.body;
 
   const data = await BookingServices.createBooking(
@@ -18,7 +18,7 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
 
   return res.status(201).json({
     success: true,
-    message: "Booking completed successfully",
+    message: "Booking pending",
     data,
   });
 });

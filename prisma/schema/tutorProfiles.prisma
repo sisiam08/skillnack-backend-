@@ -14,7 +14,7 @@ model TutorProfiles {
   bookings               Bookings[]
   availability           TutorAvailability[]
   category               Categories?         @relation(fields: [categoriesId], references: [id])
-  user                   User                @relation(fields: [userId], references: [id])
+  user                   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("tutorProfiles")

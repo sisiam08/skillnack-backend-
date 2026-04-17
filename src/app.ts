@@ -6,16 +6,14 @@ import { auth } from "./lib/auth";
 import { notFoundMiddleware } from "./middleware/notFound";
 import { globalErrorHandler } from "./middleware/globalErrorHandler";
 import router from "./routes";
+import { PaymentController } from "./modules/Payment/payment.controller";
 
 const app: Application = express();
 
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  async (req: Request, res: Response) => {
-    console.log("Received webhook event:", req.body);
-    res.status(200).json({ received: true });
-  },
+  PaymentController.handlerStripeWebshookEvent,
 );
 
 app.use(

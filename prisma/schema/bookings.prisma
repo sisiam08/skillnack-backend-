@@ -1,4 +1,5 @@
 enum BookingStatus {
+  PENDING
   CONFIRMED
   RUNNING
   COMPLETED
@@ -13,8 +14,8 @@ model Bookings {
   startTime     String
   endTime       String
   price         Float
-  status        BookingStatus @default(CONFIRMED)
-  paymentStatus PaymentStatus @default(UNPAID)
+  status        BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
   classLink     String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

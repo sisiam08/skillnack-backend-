@@ -1,3 +1,4 @@
+import { v7 as uuidv7 } from "uuid";
 import { BookingStatus, UserRole } from "../../../generated/prisma/enums";
 import { calculateTutionPrice } from "../../helpers/CalculateTutionPrice";
 import {
@@ -7,8 +8,9 @@ import {
   validateBookingDateTime,
 } from "../../helpers/TimeHelpers";
 import { prisma } from "../../lib/prisma";
-import { addHours, format, startOfDay } from "date-fns";
-
+import { stripe } from "../../config/stripe.config";
+import config from "../../config";
+import { refreshBookingData } from "../../helpers/RefreshBookingData";
 
 const createBooking = async (
   studentId: string,
@@ -80,7 +82,14 @@ const createBooking = async (
 
     const tutor = await tx.tutorProfiles.findUnique({
       where: { id: tutorId },
-      select: { hourlyRate: true },
+      select: {
+        hourlyRate: true,
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
     if (!tutor) {
@@ -89,7 +98,7 @@ const createBooking = async (
 
     const price = calculateTutionPrice(slotDuration, tutor.hourlyRate);
 
-    return await tx.bookings.create({
+    const booking = await tx.bookings.create({
       data: {
         studentId,
         tutorId,
@@ -99,6 +108,49 @@ const createBooking = async (
         price,
       },
     });
+
+    // Payment integration
+    const transactionId = String(uuidv7());
+
+    const paymentData = await tx.payment.create({
+      data: {
+        bookingId: booking.id,
+        amount: price,
+        transactionId,
+      },
+    });
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+      line_items: [
+        {
+          price_data: {
+            currency: "bdt",
+            product_data: {
+              name: "Session Booking",
+              description: `Session with ${tutor.user.name}\nDate: ${sessionDate}\nTime: ${startTime} - ${endTime}`,
+            },
+            unit_amount: price * 100,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        bookingId: booking.id,
+        paymentId: paymentData.id,
+      },
+
+      success_url: `${config.appUrl}/dashboard/payment/payment-success?bookingId=${booking.id}&paymentId=${paymentData.id}`,
+      cancel_url: `${config.appUrl}/tutor/${tutorId}`,
+    });
+
+    return {
+      booking,
+      payment: paymentData,
+      paymentUrl: session.url,
+    };
   });
 };
 
@@ -109,32 +161,8 @@ const getAllBookings = async (
   skip?: number,
 ) => {
   return await prisma.$transaction(async (tx) => {
-    const today = startOfDay(new Date());
-    const currentTime = format(addHours(new Date(), 6), "HH:mm");
+    refreshBookingData(tx);
 
-    await tx.bookings.updateMany({
-      where: {
-        OR: [
-          {
-            sessionDate: {
-              lt: today,
-            },
-          },
-          {
-            sessionDate: {
-              equals: today,
-            },
-            endTime: {
-              lt: currentTime,
-            },
-          },
-        ],
-        status: BookingStatus.CONFIRMED,
-      },
-      data: {
-        status: BookingStatus.CANCELLED,
-      },
-    });
     const isPaginated = limit !== undefined;
 
     const [result, totalData] = await Promise.all([
@@ -202,39 +230,13 @@ const getMyBookings = async (
   skip?: number,
 ) => {
   return await prisma.$transaction(async (tx) => {
-    const today = startOfDay(new Date());
-    const currentTime = format(addHours(new Date(), 6), "HH:mm");
+    refreshBookingData(tx);
 
     const andConditions: any = { studentId };
 
     if (status) {
       andConditions.status = status;
     }
-
-    await tx.bookings.updateMany({
-      where: {
-        OR: [
-          {
-            sessionDate: {
-              lt: today,
-            },
-          },
-          {
-            sessionDate: {
-              equals: today,
-            },
-            endTime: {
-              lt: currentTime,
-            },
-          },
-        ],
-        status: BookingStatus.CONFIRMED,
-        studentId: studentId,
-      },
-      data: {
-        status: BookingStatus.CANCELLED,
-      },
-    });
 
     const isPaginated = limit !== undefined;
 

@@ -5,10 +5,10 @@ CREATE TYPE "UserRole" AS ENUM ('STUDENT', 'TUTOR', 'ADMIN');
 CREATE TYPE "UserStatus" AS ENUM ('BAN', 'UNBAN');
 
 -- CreateEnum
-CREATE TYPE "BookingStatus" AS ENUM ('CONFIRMED', 'RUNNING', 'COMPLETED', 'CANCELLED');
+CREATE TYPE "BookingStatus" AS ENUM ('PENDING', 'CONFIRMED', 'RUNNING', 'COMPLETED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "PaymentStatus" AS ENUM ('PAID', 'UNPAID', 'REFUNDED');
+CREATE TYPE "PaymentStatus" AS ENUM ('PAID', 'PENDING', 'REFUNDABLE', 'REFUNDED', 'FAILED');
 
 -- CreateTable
 CREATE TABLE "user" (
@@ -80,8 +80,8 @@ CREATE TABLE "bookings" (
     "startTime" TEXT NOT NULL,
     "endTime" TEXT NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
-    "status" "BookingStatus" NOT NULL DEFAULT 'CONFIRMED',
-    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'UNPAID',
+    "status" "BookingStatus" NOT NULL DEFAULT 'PENDING',
+    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "classLink" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -104,7 +104,8 @@ CREATE TABLE "payment" (
     "bookingId" TEXT NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
     "transactionId" TEXT NOT NULL,
-    "status" "PaymentStatus" NOT NULL DEFAULT 'UNPAID',
+    "stripeEventId" TEXT,
+    "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "paymentGatewayData" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -185,6 +186,9 @@ CREATE UNIQUE INDEX "payment_bookingId_key" ON "payment"("bookingId");
 CREATE UNIQUE INDEX "payment_transactionId_key" ON "payment"("transactionId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "payment_stripeEventId_key" ON "payment"("stripeEventId");
+
+-- CreateIndex
 CREATE INDEX "payment_bookingId_idx" ON "payment"("bookingId");
 
 -- CreateIndex
@@ -212,10 +216,10 @@ ALTER TABLE "bookings" ADD CONSTRAINT "bookings_studentId_fkey" FOREIGN KEY ("st
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_tutorId_fkey" FOREIGN KEY ("tutorId") REFERENCES "tutorProfiles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "payment" ADD CONSTRAINT "payment_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "bookings"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "payment" ADD CONSTRAINT "payment_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "bookings"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "bookings"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "bookings"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tutorAvailability" ADD CONSTRAINT "tutorAvailability_tutorId_fkey" FOREIGN KEY ("tutorId") REFERENCES "tutorProfiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -224,4 +228,4 @@ ALTER TABLE "tutorAvailability" ADD CONSTRAINT "tutorAvailability_tutorId_fkey" 
 ALTER TABLE "tutorProfiles" ADD CONSTRAINT "tutorProfiles_categoriesId_fkey" FOREIGN KEY ("categoriesId") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tutorProfiles" ADD CONSTRAINT "tutorProfiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tutorProfiles" ADD CONSTRAINT "tutorProfiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

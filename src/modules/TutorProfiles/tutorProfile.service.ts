@@ -24,6 +24,7 @@ import {
   validateBookingDateTime,
 } from "../../helpers/TimeHelpers";
 import { prisma } from "../../lib/prisma";
+import { refreshBookingData } from "../../helpers/RefreshBookingData";
 
 const createProfile = async (tutorData: TutorProfilesCreateInput) => {
   return await prisma.tutorProfiles.create({
@@ -489,32 +490,7 @@ const getBookingSessions = async (
   }
 
   return await prisma.$transaction(async (tx) => {
-    const today = startOfDay(new Date());
-    const currentTime = format(addHours(new Date(), 6), "HH:mm");
-
-    await tx.bookings.updateMany({
-      where: {
-        OR: [
-          {
-            sessionDate: {
-              lt: today,
-            },
-          },
-          {
-            sessionDate: {
-              equals: today,
-            },
-            endTime: {
-              lt: currentTime,
-            },
-          },
-        ],
-        status: BookingStatus.CONFIRMED,
-      },
-      data: {
-        status: BookingStatus.CANCELLED,
-      },
-    });
+    refreshBookingData(tx);
 
     const isPaginated = limit !== undefined;
 
@@ -602,6 +578,8 @@ const getTutorStats = async (userId: string) => {
   const currentWeekStart = startOfWeek(new Date());
 
   return await prisma.$transaction(async (tx) => {
+    refreshBookingData(tx);
+
     const tutorProfile = await tx.tutorProfiles.findUnique({
       where: { userId },
       select: {
