@@ -1,0 +1,21 @@
+enum PaymentStatus {
+    PAID
+    UNPAID
+    REFUNDED
+}
+
+model Payment {
+    id                 String        @id @default(uuid())
+    bookingId          String        @unique
+    amount             Float
+    transactionId      String        @unique
+    status             PaymentStatus @default(UNPAID)
+    paymentGatewayData Json?
+    createdAt          DateTime      @default(now())
+    updatedAt          DateTime      @updatedAt
+
+    booking Bookings @relation(fields: [bookingId], references: [id])
+
+    @@index([bookingId])
+    @@map("payment")
+}

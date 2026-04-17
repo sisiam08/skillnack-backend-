@@ -1,0 +1,9 @@
+model Categories {
+  id            String          @id @default(uuid())
+  name          String          @unique @db.VarChar(100)
+  isActive      Boolean         @default(true)
+  tutorProfiles TutorProfiles[]
+
+  @@index([name])
+  @@map("categories")
+}

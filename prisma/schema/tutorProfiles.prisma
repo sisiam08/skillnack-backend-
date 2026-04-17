@@ -1,0 +1,21 @@
+model TutorProfiles {
+  id                     String              @id @default(uuid())
+  userId                 String              @unique
+  categoriesId           String?
+  bio                    String?             @db.VarChar(255)
+  hourlyRate             Float               @default(0.00)
+  experienceYears        Float
+  totalRating            Int                 @default(0)
+  totalReviews           Int                 @default(0)
+  totalCompletedBookings Int                 @default(0)
+  defaultClassLink       String?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  bookings               Bookings[]
+  availability           TutorAvailability[]
+  category               Categories?         @relation(fields: [categoriesId], references: [id])
+  user                   User                @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("tutorProfiles")
+}

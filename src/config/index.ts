@@ -31,6 +31,10 @@ const config = {
       pass: process.env.APP_PASSWORD,
     },
   },
+  stripe: {
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  },
 };
 
 export default config;

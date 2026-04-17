@@ -1,14 +1,44 @@
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
--- CreateEnum
-CREATE TYPE "BookingStatus" AS ENUM ('CONFIRMED', 'RUNNING', 'COMPLETED', 'CANCELLED');
-
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('STUDENT', 'TUTOR', 'ADMIN');
 
 -- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('BAN', 'UNBAN');
+
+-- CreateEnum
+CREATE TYPE "BookingStatus" AS ENUM ('CONFIRMED', 'RUNNING', 'COMPLETED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('PAID', 'UNPAID', 'REFUNDED');
+
+-- CreateTable
+CREATE TABLE "user" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "image" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "role" "UserRole" NOT NULL,
+    "phone" TEXT,
+    "status" "UserStatus" DEFAULT 'UNBAN',
+
+    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "session" (
+    "id" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "token" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "userId" TEXT NOT NULL,
+
+    CONSTRAINT "session_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "account" (
@@ -30,6 +60,18 @@ CREATE TABLE "account" (
 );
 
 -- CreateTable
+CREATE TABLE "verification" (
+    "id" TEXT NOT NULL,
+    "identifier" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "verification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "bookings" (
     "id" TEXT NOT NULL,
     "studentId" TEXT NOT NULL,
@@ -39,6 +81,7 @@ CREATE TABLE "bookings" (
     "endTime" TEXT NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "status" "BookingStatus" NOT NULL DEFAULT 'CONFIRMED',
+    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'UNPAID',
     "classLink" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -56,6 +99,20 @@ CREATE TABLE "categories" (
 );
 
 -- CreateTable
+CREATE TABLE "payment" (
+    "id" TEXT NOT NULL,
+    "bookingId" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "transactionId" TEXT NOT NULL,
+    "status" "PaymentStatus" NOT NULL DEFAULT 'UNPAID',
+    "paymentGatewayData" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "payment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "reviews" (
     "id" TEXT NOT NULL,
     "bookingId" TEXT NOT NULL,
@@ -65,20 +122,6 @@ CREATE TABLE "reviews" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "reviews_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "session" (
-    "id" TEXT NOT NULL,
-    "expiresAt" TIMESTAMP(3) NOT NULL,
-    "token" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "ipAddress" TEXT,
-    "userAgent" TEXT,
-    "userId" TEXT NOT NULL,
-
-    CONSTRAINT "session_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -111,36 +154,20 @@ CREATE TABLE "tutorProfiles" (
     CONSTRAINT "tutorProfiles_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "user" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
-    "image" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "role" "UserRole" NOT NULL,
-    "phone" TEXT,
-    "status" "UserStatus" DEFAULT 'UNBAN',
+-- CreateIndex
+CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 
-    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
-);
+-- CreateIndex
+CREATE UNIQUE INDEX "session_token_key" ON "session"("token");
 
--- CreateTable
-CREATE TABLE "verification" (
-    "id" TEXT NOT NULL,
-    "identifier" TEXT NOT NULL,
-    "value" TEXT NOT NULL,
-    "expiresAt" TIMESTAMP(3) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "verification_pkey" PRIMARY KEY ("id")
-);
+-- CreateIndex
+CREATE INDEX "session_userId_idx" ON "session"("userId");
 
 -- CreateIndex
 CREATE INDEX "account_userId_idx" ON "account"("userId");
+
+-- CreateIndex
+CREATE INDEX "verification_identifier_idx" ON "verification"("identifier");
 
 -- CreateIndex
 CREATE INDEX "bookings_id_idx" ON "bookings"("id");
@@ -152,16 +179,19 @@ CREATE UNIQUE INDEX "categories_name_key" ON "categories"("name");
 CREATE INDEX "categories_name_idx" ON "categories"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "payment_bookingId_key" ON "payment"("bookingId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "payment_transactionId_key" ON "payment"("transactionId");
+
+-- CreateIndex
+CREATE INDEX "payment_bookingId_idx" ON "payment"("bookingId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "reviews_bookingId_key" ON "reviews"("bookingId");
 
 -- CreateIndex
 CREATE INDEX "reviews_bookingId_idx" ON "reviews"("bookingId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "session_token_key" ON "session"("token");
-
--- CreateIndex
-CREATE INDEX "session_userId_idx" ON "session"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tutorProfiles_userId_key" ON "tutorProfiles"("userId");
@@ -169,11 +199,8 @@ CREATE UNIQUE INDEX "tutorProfiles_userId_key" ON "tutorProfiles"("userId");
 -- CreateIndex
 CREATE INDEX "tutorProfiles_userId_idx" ON "tutorProfiles"("userId");
 
--- CreateIndex
-CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
-
--- CreateIndex
-CREATE INDEX "verification_identifier_idx" ON "verification"("identifier");
+-- AddForeignKey
+ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -185,10 +212,10 @@ ALTER TABLE "bookings" ADD CONSTRAINT "bookings_studentId_fkey" FOREIGN KEY ("st
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_tutorId_fkey" FOREIGN KEY ("tutorId") REFERENCES "tutorProfiles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "bookings"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "payment" ADD CONSTRAINT "payment_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "bookings"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "bookings"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tutorAvailability" ADD CONSTRAINT "tutorAvailability_tutorId_fkey" FOREIGN KEY ("tutorId") REFERENCES "tutorProfiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -198,4 +225,3 @@ ALTER TABLE "tutorProfiles" ADD CONSTRAINT "tutorProfiles_categoriesId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "tutorProfiles" ADD CONSTRAINT "tutorProfiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-

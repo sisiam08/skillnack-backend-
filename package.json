@@ -4,9 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "build": "tsc",
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "stripe:webhook": "stripe listen --forward-to localhost:5000/webhook"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -38,6 +39,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^8.0.5",
     "pg": "^8.20.0",
+    "stripe": "^22.0.2",
     "vercel": "^51.4.0"
   }
 }
