@@ -8,13 +8,11 @@ import { Status } from "../../errors/httpStatus";
 
 const createBooking = catchAsync(async (req: Request, res: Response) => {
   const studentId = req.user!.id;
-  const { currentTime, todayDate, ...bookingData } = req.body;
+  const bookingData = req.body;
 
   const data = await BookingServices.createBooking(
     studentId,
     bookingData,
-    currentTime as string | undefined,
-    todayDate as string | undefined,
   );
 
   return res.status(Status.CREATED).json({

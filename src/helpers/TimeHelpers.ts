@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, parse } from "date-fns";
 import createAppError from "../errors/appError";
 import { Status } from "../errors/httpStatus";
 
@@ -17,6 +17,10 @@ export const minutesToTime = (minutes: number) => {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+};
+
+export const convertInto12h = (time: string) => {
+  return format(parse(time, "HH:mm", new Date()), "hh:mm a");
 };
 
 export const getCurrentTimeString = (): string => {

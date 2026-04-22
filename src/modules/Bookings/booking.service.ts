@@ -2,6 +2,7 @@ import { v7 as uuidv7 } from "uuid";
 import { BookingStatus, UserRole } from "../../../generated/prisma/enums";
 import { calculateTutionPrice } from "../../helpers/CalculateTutionPrice";
 import {
+  convertInto12h,
   fitsInAvailabilitySlot,
   isOverlapping,
   timeDuration,
@@ -21,12 +22,13 @@ const createBooking = async (
     sessionDate: string;
     startTime: string;
     endTime: string;
+    currentTime?: string;
+    todayDate?: string;
   },
-  currentTime?: string,
-  todayDate?: string,
 ) => {
   return await prisma.$transaction(async (tx) => {
-    const { tutorId, sessionDate, startTime, endTime } = bookingData;
+    const { tutorId, sessionDate, startTime, endTime, currentTime, todayDate } =
+      bookingData;
 
     const date = new Date(sessionDate);
     const dayOfWeek = date.getDay();
@@ -141,7 +143,7 @@ const createBooking = async (
             currency: "bdt",
             product_data: {
               name: "Session Booking",
-              description: `Session with ${tutor.user.name} | Date: ${sessionDate} | Time: ${startTime} - ${endTime}`,
+              description: `Session with ${tutor.user.name} | Date: ${sessionDate} | Time: ${convertInto12h(startTime)} - ${convertInto12h(endTime)}`,
             },
             unit_amount: price * 100,
           },
@@ -153,8 +155,8 @@ const createBooking = async (
         paymentId: paymentData.id,
       },
 
-      success_url: `${config.appUrl}/dashboard/payment/payment-success?bookingId=${booking.id}&paymentId=${paymentData.id}`,
-      cancel_url: `${config.appUrl}/tutor/${tutorId}`,
+      success_url: `${config.appUrl}/dashboard/sessions`,
+      cancel_url: `${config.appUrl}/find-tutors/${tutorId}`,
     });
 
     return {
