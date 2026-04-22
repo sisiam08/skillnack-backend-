@@ -46,6 +46,107 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
+    requireEmailVerification: true,
+    sendResetPassword: async ({ user, url, token }, request) => {
+      await transporter.sendMail({
+        from: "Skill Bridge <info@skillbridge.com>",
+        to: user.email,
+        subject: "Reset your password",
+        html: `<!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8" />
+              <title>Reset Your Password</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            </head>
+            <body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, Helvetica, sans-serif;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8; padding:40px 0;">
+                <tr>
+                  <td align="center">
+                    <table width="100%" max-width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+
+                      <!-- Header -->
+                      <tr>
+                        <td style="background:#ec5b13; padding:20px; text-align:center;">
+                          <h1 style="color:#ffffff; margin:0; font-size:24px;">
+                            Skill Bridge
+                          </h1>
+                        </td>
+                      </tr>
+
+                      <!-- Body -->
+                      <tr>
+                        <td style="padding:30px; color:#333333;">
+                          <h2 style="margin-top:0;">Reset your password</h2>
+
+                          <p style="font-size:16px; line-height:1.6;">
+                            Hi <strong>${user.name || "there"}</strong>,
+                          </p>
+
+                          <p style="font-size:16px; line-height:1.6;">
+                            We received a request to reset your password for your Skill Bridge account.
+                            Click the button below to create a new password.
+                          </p>
+
+                          <!-- Button -->
+                          <div style="text-align:center; margin:30px 0;">
+                            <a
+                              href="${url}"
+                              style="
+                                background:#ec5b13;
+                                color:#ffffff;
+                                text-decoration:none;
+                                padding:14px 28px;
+                                border-radius:6px;
+                                font-size:16px;
+                                display:inline-block;
+                              "
+                            >
+                              Reset Password
+                            </a>
+                          </div>
+
+                          <p style="font-size:14px; color:#666666; line-height:1.6;">
+                            If the button doesn't work, copy and paste this link into your browser:
+                          </p>
+
+                          <p style="font-size:14px; word-break:break-all;">
+                            <a href="${url}" style="color:#ec5b13;">
+                              ${url}
+                            </a>
+                          </p>
+
+                          <p style="font-size:14px; color:#666666; line-height:1.6; margin-top:20px;">
+                            This link will expire in 1 hour for security reasons.
+                          </p>
+
+                          <p style="font-size:14px; color:#666666; line-height:1.6;">
+                            If you did not request a password reset, you can safely ignore this email.
+                            Your password will remain unchanged.
+                          </p>
+
+                          <p style="margin-top:30px; font-size:14px;">
+                            — Skill Bridge Team
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td style="background:#f1f5f9; padding:15px; text-align:center; font-size:12px; color:#777777;">
+                          © ${new Date().getFullYear()} Skill Bridge. All rights reserved.
+                        </td>
+                      </tr>
+
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+            `,
+      });
+    },
   },
   emailVerification: {
     sendOnSignUp: true,
@@ -56,10 +157,12 @@ export const auth = betterAuth({
         return;
       }
 
-      console.log(user, url);
-
       try {
-        const verificationURL = url;
+        const redirectURL = `${config.appUrl}/login`;
+        const verificationURL = url.replace(
+          /callbackURL=[^&]*/,
+          `callbackURL=${encodeURIComponent(redirectURL)}`,
+        );
 
         const info = await transporter.sendMail({
           from: "Skillnack <info@skillnack.com>",
