@@ -485,14 +485,17 @@ const getBookingSessions = async (
     throw createAppError("Tutor profile not found", Status.NOT_FOUND);
   }
 
-  const andConditions: any = { tutorId: tutorProfile.id };
+  const andConditions: any = {
+    tutorId: tutorProfile.id,
+    status: { not: BookingStatus.PENDING },
+  };
 
   if (status) {
     andConditions.status = status;
   }
 
   return await prisma.$transaction(async (tx) => {
-    refreshBookingData(tx);
+    await refreshBookingData(tx);
 
     const isPaginated = limit !== undefined;
 
@@ -580,7 +583,7 @@ const getTutorStats = async (userId: string) => {
   const currentWeekStart = startOfWeek(new Date());
 
   return await prisma.$transaction(async (tx) => {
-    refreshBookingData(tx);
+    await refreshBookingData(tx);
 
     const tutorProfile = await tx.tutorProfiles.findUnique({
       where: { userId },

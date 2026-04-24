@@ -155,7 +155,7 @@ const createBooking = async (
         paymentId: paymentData.id,
       },
 
-      success_url: `${config.appUrl}/dashboard/sessions`,
+      success_url: `${config.appUrl}/dashboard/session`,
       cancel_url: `${config.appUrl}/find-tutors/${tutorId}`,
     });
 
@@ -174,7 +174,7 @@ const getAllBookings = async (
   skip?: number,
 ) => {
   return await prisma.$transaction(async (tx) => {
-    refreshBookingData(tx);
+    await refreshBookingData(tx);
 
     const isPaginated = limit !== undefined;
 
@@ -243,9 +243,12 @@ const getMyBookings = async (
   skip?: number,
 ) => {
   return await prisma.$transaction(async (tx) => {
-    refreshBookingData(tx);
+    await refreshBookingData(tx);
 
-    const andConditions: any = { studentId };
+    const andConditions: any = {
+      studentId,
+      status: { not: BookingStatus.PENDING },
+    };
 
     if (status) {
       andConditions.status = status;

@@ -65,7 +65,7 @@ export const getAvailableSlotsValidationSchema = z.object({
 
 export const setAvailabilityValidationSchema = z.object({
   body: z.object({
-    day: z.string().min(1, "Day is required"),
+    dayOfWeek: z.number().min(0).max(6, "Day must be between 0 and 6"),
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
   }),
@@ -73,9 +73,10 @@ export const setAvailabilityValidationSchema = z.object({
 
 export const updateAvailabilityValidationSchema = z.object({
   body: z.object({
-    day: z.string().optional(),
+    dayOfWeek: z.number().min(0).max(6).optional(),
     startTime: z.string().optional(),
     endTime: z.string().optional(),
+    isActive: z.boolean().optional(),
   }),
   params: z.object({
     id: z.string().min(1, "Availability ID is required"),

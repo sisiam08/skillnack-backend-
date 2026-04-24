@@ -1,7 +1,8 @@
 import { addHours, format, startOfDay } from "date-fns";
 import { BookingStatus } from "../../generated/prisma/enums";
+import { Prisma } from "../../generated/prisma/browser";
 
-export const refreshBookingData = async (tx: any) => {
+export const refreshBookingData = async (tx: Prisma.TransactionClient) => {
   const today = startOfDay(new Date());
   const currentTime = format(addHours(new Date(), 6), "HH:mm");
 

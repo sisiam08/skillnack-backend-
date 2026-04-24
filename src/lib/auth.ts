@@ -49,7 +49,7 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url, token }, request) => {
       await transporter.sendMail({
-        from: "Skill Bridge <info@skillbridge.com>",
+        from: "Skillnack <info@skillnack.com>",
         to: user.email,
         subject: "Reset your password",
         html: `<!DOCTYPE html>
@@ -69,7 +69,7 @@ export const auth = betterAuth({
                       <tr>
                         <td style="background:#ec5b13; padding:20px; text-align:center;">
                           <h1 style="color:#ffffff; margin:0; font-size:24px;">
-                            Skill Bridge
+                            Skillnack
                           </h1>
                         </td>
                       </tr>
@@ -84,7 +84,7 @@ export const auth = betterAuth({
                           </p>
 
                           <p style="font-size:16px; line-height:1.6;">
-                            We received a request to reset your password for your Skill Bridge account.
+                            We received a request to reset your password for your Skillnack account.
                             Click the button below to create a new password.
                           </p>
 
@@ -126,7 +126,7 @@ export const auth = betterAuth({
                           </p>
 
                           <p style="margin-top:30px; font-size:14px;">
-                            — Skill Bridge Team
+                            — Skillnack Team
                           </p>
                         </td>
                       </tr>
@@ -134,7 +134,7 @@ export const auth = betterAuth({
                       <!-- Footer -->
                       <tr>
                         <td style="background:#f1f5f9; padding:15px; text-align:center; font-size:12px; color:#777777;">
-                          © ${new Date().getFullYear()} Skill Bridge. All rights reserved.
+                          © ${new Date().getFullYear()} Skillnack. All rights reserved.
                         </td>
                       </tr>
 
