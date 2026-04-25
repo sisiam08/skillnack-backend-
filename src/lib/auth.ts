@@ -24,8 +24,17 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  baseURL: config.betterAuth.betterAuthUrl!,
+  baseURL: config.appUrl!,
   trustedOrigins: [config.appUrl!],
+  advanced: {
+    useSecureCookies: true,
+    defaultCookieAttributes: {
+      secure: true,
+      sameSite: "lax",
+      httpOnly: true,
+      path: "/",
+    },
+  },
   user: {
     additionalFields: {
       role: {
@@ -264,26 +273,26 @@ export const auth = betterAuth({
       }
     },
   },
-  advanced: {
-    cookies: {
-      session_token: {
-        name: "session_token",
-        attributes: {
-          httpOnly: true,
-          secure: config.env === "production",
-          sameSite: "none",
-          partitioned: true,
-        },
-      },
-      state: {
-        name: "session_token",
-        attributes: {
-          httpOnly: true,
-          secure: config.env === "production",
-          sameSite: "none",
-          partitioned: true,
-        },
-      },
-    },
-  },
+  // advanced: {
+  //   cookies: {
+  //     session_token: {
+  //       name: "session_token",
+  //       attributes: {
+  //         httpOnly: true,
+  //         secure: config.env === "production",
+  //         sameSite: "none",
+  //         partitioned: true,
+  //       },
+  //     },
+  //     state: {
+  //       name: "session_token",
+  //       attributes: {
+  //         httpOnly: true,
+  //         secure: config.env === "production",
+  //         sameSite: "none",
+  //         partitioned: true,
+  //       },
+  //     },
+  //   },
+  // },
 });
