@@ -6,6 +6,7 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 const config = {
   env: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT) || 5000,
+  host: process.env.HOST || "0.0.0.0",
   databaseUrl: process.env.DATABASE_URL,
   appUrl: process.env.APP_URL,
   betterAuth: {
@@ -24,7 +25,7 @@ const config = {
   },
   nodemailer: {
     host: process.env.NODEMAILER_HOST,
-    port: parseInt(process.env.NODEMAILER_PORT as string),
+    port: Number(process.env.NODEMAILER_PORT as string) || 587,
     auth: {
       user: process.env.APP_USER,
       pass: process.env.APP_PASSWORD,

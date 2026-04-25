@@ -25,7 +25,7 @@ async function main() {
 
     console.log("✅ Database connected successfully");
 
-    server = app.listen(config.port, async () => {
+    server = app.listen(config.port, config.host, async () => {
       console.log(`🌐 Server is running on port ${config.port}`);
 
       // ⚠️ Seed only in development (avoid Render restart loop issues)
