@@ -5,7 +5,7 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 const config = {
   env: process.env.NODE_ENV || "development",
-  port: process.env.PORT || 5000,
+  port: Number(process.env.PORT) || 5000,
   databaseUrl: process.env.DATABASE_URL,
   appUrl: process.env.APP_URL,
   betterAuth: {

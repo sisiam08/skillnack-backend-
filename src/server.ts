@@ -7,23 +7,49 @@ import { seedAdmin } from "../prisma/seed";
 let server: Server;
 
 async function main() {
+  console.log("🚀 Starting Skillnack server...");
+
   try {
+    console.log("📦 Environment Info:");
+    console.log("NODE_ENV:", config.env);
+    console.log("PORT:", config.port);
+    console.log("DATABASE_URL exists:", !!config.databaseUrl);
+
+    if (!config.databaseUrl) {
+      throw new Error("DATABASE_URL is missing in environment variables");
+    }
+
+    console.log("🔌 Connecting to database...");
+
     await prisma.$connect();
-    console.log("Database connected successfully");
+
+    console.log("✅ Database connected successfully");
 
     server = app.listen(config.port, async () => {
-      console.log(`Skillnack app listening on port ${config.port}`);
+      console.log(`🌐 Server is running on port ${config.port}`);
 
-      // Run seed AFTER server starts listening
-      try {
-        await seedAdmin();
-      } catch (seedError: any) {
-        console.warn("Seed warning:", seedError.message);
-        // Don't fail startup if seed fails
+      // ⚠️ Seed only in development (avoid Render restart loop issues)
+      if (config.env !== "production") {
+        console.log("🌱 Running seed script...");
+
+        try {
+          await seedAdmin();
+          console.log("✅ Seed completed successfully");
+        } catch (seedError: any) {
+          console.warn("⚠️ Seed warning:", seedError.message);
+        }
+      } else {
+        console.log("🚫 Skipping seed in production");
       }
     });
-  } catch (err) {
-    console.error("Failed to start server:", err);
+
+    server.on("error", (err) => {
+      console.error("❌ Server error:", err);
+    });
+  } catch (err: any) {
+    console.error("❌ Failed to start server:");
+    console.error(err);
+
     process.exit(1);
   }
 }
@@ -31,24 +57,23 @@ async function main() {
 main();
 
 const gracefulShutdown = async (signal: string) => {
-  console.log(`\n${signal} received. Starting graceful shutdown...`);
+  console.log(`\n🛑 ${signal} received. Shutting down gracefully...`);
 
   try {
     await prisma.$disconnect();
-    console.log("Database connection closed");
+    console.log("🔌 Database disconnected");
   } catch (err) {
-    console.error("Error closing database connection:", err);
+    console.error("❌ Error disconnecting DB:", err);
   }
 
   if (server) {
     server.close(() => {
-      console.log("HTTP server closed");
+      console.log("🧹 HTTP server closed");
       process.exit(0);
     });
 
-    // Force shutdown after 10 seconds
     setTimeout(() => {
-      console.error("Forced shutdown due to timeout");
+      console.error("⏰ Forced shutdown (timeout)");
       process.exit(1);
     }, 10000);
   } else {
@@ -57,19 +82,16 @@ const gracefulShutdown = async (signal: string) => {
 };
 
 process.on("uncaughtException", (error: Error) => {
-  console.error("Uncaught Exception:", error);
+  console.error("💥 Uncaught Exception:");
+  console.error(error);
   process.exit(1);
 });
 
-process.on("unhandledRejection", (reason: any, promise: Promise<any>) => {
-  console.error("Unhandled Rejection at:", promise, "Reason:", reason);
+process.on("unhandledRejection", (reason: any) => {
+  console.error("💥 Unhandled Rejection:");
+  console.error(reason);
   process.exit(1);
 });
 
-process.on("SIGTERM", () => {
-  gracefulShutdown("SIGTERM");
-});
-
-process.on("SIGINT", () => {
-  gracefulShutdown("SIGINT");
-});
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
