@@ -145,6 +145,7 @@ CREATE TABLE "tutorProfiles" (
     "bio" VARCHAR(255),
     "hourlyRate" DOUBLE PRECISION NOT NULL DEFAULT 0.00,
     "experienceYears" DOUBLE PRECISION NOT NULL,
+    "tags" VARCHAR(255)[],
     "totalRating" INTEGER NOT NULL DEFAULT 0,
     "totalReviews" INTEGER NOT NULL DEFAULT 0,
     "totalCompletedBookings" INTEGER NOT NULL DEFAULT 0,

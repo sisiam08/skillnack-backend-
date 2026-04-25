@@ -5,6 +5,7 @@ model TutorProfiles {
   bio                    String?             @db.VarChar(255)
   hourlyRate             Float               @default(0.00)
   experienceYears        Float
+  tags                   String[]            @db.VarChar(255)
   totalRating            Int                 @default(0)
   totalReviews           Int                 @default(0)
   totalCompletedBookings Int                 @default(0)

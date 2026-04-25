@@ -55,6 +55,9 @@ const getAllProfiles = async (
     const numberSearch = Number(search);
 
     if (Number.isNaN(numberSearch)) {
+      const titleCaseSearch =
+        search.charAt(0).toUpperCase() + search.slice(1).toLowerCase();
+
       andConsditions.push({
         OR: [
           {
@@ -77,6 +80,26 @@ const getAllProfiles = async (
                 contains: search,
                 mode: "insensitive",
               },
+            },
+          },
+          {
+            tags: {
+              has: search,
+            },
+          },
+          {
+            tags: {
+              has: search.toLowerCase(),
+            },
+          },
+          {
+            tags: {
+              has: search.toUpperCase(),
+            },
+          },
+          {
+            tags: {
+              has: titleCaseSearch,
             },
           },
         ],

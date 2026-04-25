@@ -2,25 +2,28 @@ import { z } from "zod";
 
 export const createTutorProfileValidationSchema = z.object({
   body: z.object({
+    userId: z.string().min(1, "User ID is required"),
+    categoriesId: z.string().min(1, "Category is required"),
     bio: z.string().optional(),
-    qualifications: z.string().optional(),
-    specialization: z.string().optional(),
-    experience: z.number().optional(),
-    hourlyRate: z.number().optional(),
-    category: z.string().optional(),
-    description: z.string().optional(),
+    experienceYears: z.number().min(0, "Experience must be non-negative"),
+    hourlyRate: z.number().min(0, "Hourly rate must be non-negative"),
+    tags: z.array(z.string()).optional(),
   }),
 });
 
 export const updateTutorProfileValidationSchema = z.object({
   body: z.object({
+    categoriesId: z.string().min(1, "Category is required").optional(),
     bio: z.string().optional(),
-    qualifications: z.string().optional(),
-    specialization: z.string().optional(),
-    experience: z.number().optional(),
-    hourlyRate: z.number().optional(),
-    category: z.string().optional(),
-    description: z.string().optional(),
+    experienceYears: z
+      .number()
+      .min(0, "Experience must be non-negative")
+      .optional(),
+    hourlyRate: z
+      .number()
+      .min(0, "Hourly rate must be non-negative")
+      .optional(),
+    tags: z.array(z.string()).optional(),
   }),
 });
 
