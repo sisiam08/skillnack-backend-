@@ -1,8 +1,6 @@
 import { Server } from "http";
-import app from "./app";
 import { prisma } from "./lib/prisma";
 import config from "./config";
-import { seedAdmin } from "../prisma/seed";
 
 let server: Server;
 
@@ -25,6 +23,8 @@ async function main() {
 
     console.log("✅ Database connected successfully");
 
+    const { default: app } = await import("./app");
+
     server = app.listen(config.port, async () => {
       console.log(`🌐 Server is running on port ${config.port}`);
 
@@ -33,6 +33,7 @@ async function main() {
         console.log("🌱 Running seed script...");
 
         try {
+          const { seedAdmin } = await import("../prisma/seed");
           await seedAdmin();
           console.log("✅ Seed completed successfully");
         } catch (seedError: any) {

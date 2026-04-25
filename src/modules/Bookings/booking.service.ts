@@ -9,7 +9,7 @@ import {
   validateBookingDateTime,
 } from "../../helpers/TimeHelpers";
 import { prisma } from "../../lib/prisma";
-import { stripe } from "../../config/stripe.config";
+import { getStripeClient } from "../../config/stripe.config";
 import config from "../../config";
 import { refreshBookingData } from "../../helpers/RefreshBookingData";
 import createAppError from "../../errors/appError";
@@ -132,6 +132,8 @@ const createBooking = async (
         transactionId,
       },
     });
+
+    const stripe = getStripeClient();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

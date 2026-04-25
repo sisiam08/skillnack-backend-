@@ -4,7 +4,7 @@ import { PaymentService } from "./payment.service";
 import config from "../../config";
 import { Request, Response } from "express";
 import { Status } from "../../errors/httpStatus";
-import { stripe } from "../../config/stripe.config";
+import { getStripeClient } from "../../config/stripe.config";
 
 const handlerStripeWebshookEvent = catchAsync(
   async (req: Request, res: Response) => {
@@ -21,6 +21,7 @@ const handlerStripeWebshookEvent = catchAsync(
     let event;
 
     try {
+      const stripe = getStripeClient();
       event = stripe.webhooks.constructEvent(
         req.body,
         signature,
