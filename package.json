@@ -1,26 +1,24 @@
 {
   "name": "backend",
-  "module": "index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "prisma generate && tsup src/server.ts --format esm --outDir dist",
     "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
-    "stripe:webhook": "stripe listen --forward-to localhost:5000/webhook"
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "^25.6.0",
-    "@types/pg": "^8.20.0",
+    "@types/node": "^20.11.30",
+    "@types/pg": "^8.11.0",
     "prisma": "^7.7.0",
-    "tsx": "^4.21.0"
-  },
-  "peerDependencies": {
-    "typescript": "^6.0.2"
+    "tsx": "^4.21.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
@@ -40,7 +38,6 @@
     "nodemailer": "^8.0.5",
     "pg": "^8.20.0",
     "stripe": "^22.0.2",
-    "uuid": "^13.0.0",
-    "vercel": "^51.4.0"
+    "uuid": "^13.0.0"
   }
 }

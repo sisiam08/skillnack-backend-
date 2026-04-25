@@ -1,18 +1,16 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "rootDir": "./src",
+    "module": "EsNext",
     "target": "ES2023",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0",
-    "jsx": "react-jsx",
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force"
+    "types": ["node"],
+    "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": []
+  "exclude": ["node_modules", "dist"]
 }
