@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "prisma generate && tsup src/server.ts --format esm --outDir dist",
+    "build": "prisma generate && tsup",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
