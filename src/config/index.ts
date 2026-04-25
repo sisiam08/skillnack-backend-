@@ -7,7 +7,6 @@ const config = {
   env: process.env.NODE_ENV || "development",
   port: process.env.PORT || 5000,
   databaseUrl: process.env.DATABASE_URL,
-  baseURL: process.env.BETTER_AUTH_URL,
   appUrl: process.env.APP_URL,
   betterAuth: {
     betterAuthSecret: process.env.BETTER_AUTH_SECRET,

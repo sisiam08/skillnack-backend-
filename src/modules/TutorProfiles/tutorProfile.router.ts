@@ -2,7 +2,7 @@ import { Router } from "express";
 import { TutorProfileControllers } from "./tutorProfile.controller";
 import { auth_middleware } from "../../middleware/auth";
 import { validateRequest } from "../../middleware/validateRequest";
-import { UserRole } from "../../../generated/prisma/enums";
+import { UserRole } from "../../generated/enums";
 import {
   createTutorProfileValidationSchema,
   updateTutorProfileValidationSchema,

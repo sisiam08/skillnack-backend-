@@ -1,5 +1,5 @@
-import { addHours, formatDistanceToNow, startOfMonth } from "date-fns";
-import { BookingStatus } from "../../../generated/prisma/client";
+import { addHours, startOfMonth } from "date-fns";
+import { BookingStatus } from "../../generated/client";
 import { prisma } from "../../lib/prisma";
 import { timeAgo } from "../../helpers/TimeHelpers";
 

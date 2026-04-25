@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { AdminServices } from "./admin.service";
-import { UserRole, UserStatus } from "../../../generated/prisma/client";
+import { UserRole, UserStatus } from "../../generated/client";
 import PaginationHelper from "../../helpers/Pagination";
 import { PaginationOptions } from "../../interfaces";
 import { catchAsync } from "../../utils/catchAsync";

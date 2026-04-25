@@ -24,7 +24,7 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  baseURL: config.baseURL!,
+  baseURL: config.appUrl!,
   trustedOrigins: [config.appUrl!],
   user: {
     additionalFields: {
@@ -262,6 +262,28 @@ export const auth = betterAuth({
       } catch (error) {
         console.error("Error sending verification email: ", error);
       }
+    },
+  },
+  advanced: {
+    cookies: {
+      session_token: {
+        name: "session_token",
+        attributes: {
+          httpOnly: true,
+          secure: config.env === "production",
+          sameSite: "none",
+          partitioned: true,
+        },
+      },
+      state: {
+        name: "session_token",
+        attributes: {
+          httpOnly: true,
+          secure: config.env === "production",
+          sameSite: "none",
+          partitioned: true,
+        },
+      },
     },
   },
 });

@@ -1,7 +1,7 @@
 import express from "express";
 import { auth_middleware } from "../../middleware/auth";
 import { validateRequest } from "../../middleware/validateRequest";
-import { UserRole } from "../../../generated/prisma/client";
+import { UserRole } from "../../generated/client";
 import { AdminControllers } from "./admin.controller";
 import {
   getAllUsersValidationSchema,

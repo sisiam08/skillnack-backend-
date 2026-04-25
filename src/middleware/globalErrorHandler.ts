@@ -7,7 +7,7 @@ import {
   handlePrismaInitializationError,
 } from "../errors/prismaErrors";
 import { IErrorSource } from "../interfaces";
-import { Prisma } from "../../generated/prisma/client";
+import { Prisma } from "../generated/client";
 import { handleZodError } from "../errors/zodError";
 import { deleteFileFromCloudinary } from "../config/cloudinary.config";
 import { Status } from "../errors/httpStatus";
@@ -18,7 +18,7 @@ export const globalErrorHandler = async (
   res: Response,
   next: NextFunction,
 ) => {
-  let statusCode = Status.INTERNAL_SERVER_ERROR;
+  let statusCode: number = Status.INTERNAL_SERVER_ERROR;
   let message = "Something went wrong!";
   let errorSource: IErrorSource[] = [];
 

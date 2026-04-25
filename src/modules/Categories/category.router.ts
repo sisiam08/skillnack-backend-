@@ -2,7 +2,7 @@ import express, { Application } from "express";
 import { CategoryControllers } from "./category.controller";
 import { auth_middleware } from "../../middleware/auth";
 import { validateRequest } from "../../middleware/validateRequest";
-import { UserRole } from "../../../generated/prisma/enums";
+import { UserRole } from "../../generated/enums";
 import {
   createCategoryValidationSchema,
   updateCategoryValidationSchema,

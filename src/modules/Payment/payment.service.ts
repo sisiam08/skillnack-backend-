@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { prisma } from "../../lib/prisma";
-import { BookingStatus, PaymentStatus } from "../../../generated/prisma/enums";
+import { BookingStatus, PaymentStatus } from "../../generated/enums";
 
 const handlerStripeWebshookEvent = async (event: Stripe.Event) => {
   const existingPayment = await prisma.payment.findFirst({

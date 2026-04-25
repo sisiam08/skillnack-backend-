@@ -1,8 +1,7 @@
-import { role } from "better-auth/plugins";
-import { UserRole } from "../generated/prisma/enums";
 import config from "../src/config";
 import { prisma } from "../src/lib/prisma";
 import { setSkipEmailDuringSeed } from "../src/lib/auth";
+import { UserRole } from "../src/generated/enums";
 
 /**
  * Seed admin user on application startup via better-auth API

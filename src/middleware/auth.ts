@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { UserRole } from "../../generated/prisma/enums";
+import { UserRole } from "../generated/enums";
 import { auth } from "../lib/auth";
 import { Status } from "../errors/httpStatus";
 

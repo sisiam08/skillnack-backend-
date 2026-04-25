@@ -10,11 +10,11 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { BookingStatus } from "../../../generated/prisma/enums";
+import { BookingStatus } from "../../generated/enums";
 import {
   TutorProfilesCreateInput,
   TutorProfilesUpdateInput,
-} from "../../../generated/prisma/models";
+} from "../../generated/models";
 import { calculateTutionPrice } from "../../helpers/CalculateTutionPrice";
 import {
   isOverlapping,

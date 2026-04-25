@@ -2,7 +2,7 @@ import express from "express";
 import { ReviewControllers } from "./review.controller";
 import { auth_middleware } from "../../middleware/auth";
 import { validateRequest } from "../../middleware/validateRequest";
-import { UserRole } from "../../../generated/prisma/client";
+import { UserRole } from "../../generated/client";
 import {
   createReviewValidationSchema,
   getAllReviewsValidationSchema,

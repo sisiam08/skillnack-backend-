@@ -1,5 +1,5 @@
 import { v7 as uuidv7 } from "uuid";
-import { BookingStatus, UserRole } from "../../../generated/prisma/enums";
+import { BookingStatus, UserRole } from "../../generated/enums";
 import { calculateTutionPrice } from "../../helpers/CalculateTutionPrice";
 import {
   convertInto12h,

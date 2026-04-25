@@ -4,7 +4,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { PaginationOptions, SortingOptions } from "../../interfaces";
 import PaginationHelper from "../../helpers/Pagination";
 import SortingHelper from "../../helpers/Sorting";
-import { BookingStatus } from "../../../generated/prisma/enums";
+import { BookingStatus } from "../../generated/enums";
 import { Status } from "../../errors/httpStatus";
 
 const createProfile = catchAsync(async (req: Request, res: Response) => {

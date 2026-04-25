@@ -1,4 +1,4 @@
-import { UserRole, UserStatus } from "../../../generated/prisma/enums";
+import { UserRole, UserStatus } from "../../generated/enums";
 import { prisma } from "../../lib/prisma";
 import { addHours, startOfMonth } from "date-fns";
 

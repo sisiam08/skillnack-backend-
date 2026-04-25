@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { BookingServices } from "./booking.service";
 import { catchAsync } from "../../utils/catchAsync";
-import { BookingStatus, UserRole } from "../../../generated/prisma/enums";
+import { BookingStatus, UserRole } from "../../generated/enums";
 import { PaginationOptions } from "../../interfaces";
 import PaginationHelper from "../../helpers/Pagination";
 import { Status } from "../../errors/httpStatus";

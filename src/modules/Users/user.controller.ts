@@ -13,7 +13,6 @@ const updateMe = catchAsync(async (req: Request, res: Response) => {
   if (name) updateData.name = name;
   if (phone) updateData.phone = phone;
 
-  // Extract Cloudinary URL directly from multer (already uploaded by middleware)
   if (file) {
     updateData.image = (file as any).path || (file as any).url;
   }
