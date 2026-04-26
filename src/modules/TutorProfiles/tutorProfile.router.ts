@@ -46,11 +46,7 @@ router.get(
   TutorProfileControllers.getBookingSessions,
 );
 
-router.get(
-  "/defaultClassLink",
-  auth_middleware([UserRole.TUTOR]),
-  TutorProfileControllers.getDefaultClassLink,
-);
+
 
 router.get(
   "/stats",
@@ -117,11 +113,5 @@ router.delete(
   TutorProfileControllers.deleteAvailability,
 );
 
-router.patch(
-  "/defaultClassLink",
-  auth_middleware([UserRole.TUTOR]),
-  validateRequest(setDefaultClassLinkValidationSchema),
-  TutorProfileControllers.setDefaultClassLink,
-);
 
 export const TutorProfileRouters: Router = router;
