@@ -1,6 +1,7 @@
 import {
   addDays,
   addHours,
+  endOfDay,
   format,
   getHours,
   getMinutes,
@@ -27,6 +28,7 @@ import { prisma } from "../../lib/prisma";
 import { refreshBookingData } from "../../helpers/RefreshBookingData";
 import createAppError from "../../errors/appError";
 import { Status } from "../../errors/httpStatus";
+import { ta } from "date-fns/locale";
 
 const createProfile = async (tutorData: TutorProfilesCreateInput) => {
   return await prisma.tutorProfiles.create({
@@ -574,6 +576,7 @@ const getBookingSessions = async (
 
 const getTutorStats = async (userId: string) => {
   const today = startOfDay(new Date());
+  const todayEnd = endOfDay(new Date());
   const currentMonthStart = startOfMonth(new Date());
   const currentWeekStart = startOfWeek(new Date());
 
@@ -645,13 +648,19 @@ const getTutorStats = async (userId: string) => {
         ),
 
       // Today's Earnings
-      earningsPerBooking
-        .filter((booking) => booking.sessionDate == today)
-        .reduce(
-          (accumulator, currentbooking) =>
-            accumulator + currentbooking.earnings,
-          0,
-        ),
+      tx.bookings.aggregate({
+        where: {
+          tutorId,
+          status: BookingStatus.COMPLETED,
+          sessionDate: {
+            gte: today,
+            lte: todayEnd,
+          },
+        },
+        _sum: {
+          price: true,
+        },
+      }),
 
       // Total Unique Students
       tx.bookings.findMany({
@@ -729,7 +738,7 @@ const getTutorStats = async (userId: string) => {
       earnings: {
         totalEarnings: totalEarnings ?? 0,
         earningsThisMonth: monthlyEarnings ?? 0,
-        earningsToday: todayEarnings ?? 0,
+        earningsToday: todayEarnings._sum.price ?? 0,
         hourlyRate: tutorProfile.hourlyRate,
       },
       profile: {
