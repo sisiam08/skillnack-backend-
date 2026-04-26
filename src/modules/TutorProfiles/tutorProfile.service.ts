@@ -1,7 +1,6 @@
 import {
   addDays,
   addHours,
-  endOfDay,
   format,
   getHours,
   getMinutes,
@@ -11,8 +10,6 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
-
 import { BookingStatus } from "../../generated/enums";
 import {
   TutorProfilesCreateInput,
@@ -755,89 +752,6 @@ const getTutorStats = async (userId: string) => {
   });
 };
 
-// const getWeeklyEarnings = async (userId: string) => {
-//   const tutorProfile = await prisma.tutorProfiles.findUnique({
-//     where: { userId },
-//     select: { id: true },
-//   });
-
-//   if (!tutorProfile) {
-//     throw createAppError("Tutor profile not found", Status.NOT_FOUND);
-//   }
-
-//   console.log("🔍 Tutor ID:", tutorProfile.id);
-
-//   const completedBookings = await prisma.bookings.findMany({
-//     where: {
-//       tutorId: tutorProfile.id,
-//       status: BookingStatus.COMPLETED,
-//     },
-//     select: {
-//       id: true,
-//       status: true,
-//       sessionDate: true,
-//       price: true,
-//     },
-//   });
-//   console.log("✅ Completed Bookings:", completedBookings);
-
-//   const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
-//   console.log("📅 Week Start:", currentWeekStart);
-
-//   //   const currentWeekStart = startOfWeek(new Date(), {
-//   //   weekStartsOn: 0,
-//   // });
-
-//   // const dayStart = startOfDay(addDays(currentWeekStart, i));
-//   // const dayEnd = endOfDay(addDays(currentWeekStart, i)); // 🔥 change
-
-//   // Resolve all daily earnings in parallel
-//   const weeklyEarnings = await Promise.all(
-//     Array.from({ length: 7 }, async (_, i) => {
-//       const dayStart = startOfDay(addDays(currentWeekStart, i));
-//       const dayEnd = endOfDay(dayStart);
-//       const dayName = format(dayStart, "EEE");
-
-//       const result = await prisma.bookings.aggregate({
-//         where: {
-//           tutorId: tutorProfile.id,
-//           status: BookingStatus.COMPLETED,
-//           sessionDate: {
-//             gte: dayStart,
-//             lt: dayEnd,
-//           },
-//         },
-//         _sum: { price: true },
-//       });
-
-//       console.log(
-//         `💰 Aggregate Result for ${dayName}:`,
-//         JSON.stringify(result),
-//       );
-
-//       // Apply tutor's 90% commission rate
-//       const totalPrice = result._sum.price ?? 0;
-//       const earnings = totalPrice * 0.9;
-
-//       console.log(
-//         `✅ ${dayName}: Total Price = ${totalPrice}, Earnings (90%) = ${earnings}`,
-//       );
-
-//       return {
-//         weekDay: dayName,
-//         earnings: Math.round(earnings * 100) / 100, // Round to 2 decimal places
-//       };
-//     }),
-//   );
-
-//   console.log("📊 Weekly Earnings Data:", weeklyEarnings);
-//   return weeklyEarnings;
-// };
-
-
-
-
-
 const getWeeklyEarnings = async (userId: string) => {
   const tutorProfile = await prisma.tutorProfiles.findUnique({
     where: { userId },
@@ -848,106 +762,35 @@ const getWeeklyEarnings = async (userId: string) => {
     throw createAppError("Tutor profile not found", Status.NOT_FOUND);
   }
 
-  console.log("🔍 Tutor ID:", tutorProfile.id);
+  const currentWeekStart = startOfWeek(new Date());
 
-  const completedBookings = await prisma.bookings.findMany({
-    where: {
-      tutorId: tutorProfile.id,
-      status: BookingStatus.COMPLETED,
-    },
-    select: {
-      id: true,
-      sessionDate: true,
-      price: true,
-    },
+  const data = Array.from({ length: 7 }, async (_, i) => {
+    const dayStart = addDays(currentWeekStart, i);
+    const dayEnd = addDays(dayStart, 1);
+    const dayName = format(dayStart, "EEE");
+
+    const result = await prisma.bookings.aggregate({
+      where: {
+        tutorId: tutorProfile.id,
+        status: BookingStatus.COMPLETED,
+        sessionDate: {
+          gte: dayStart,
+          lt: dayEnd,
+        },
+      },
+      _sum: { price: true },
+    });
+
+    return {
+      weekDay: dayName,
+      earnings: result._sum.price ?? 0,
+    };
   });
 
-  console.log("✅ Completed Bookings:", completedBookings);
-
-  // ✅ 🔥 IMPORTANT: Use UTC week start
-  const now = new Date();
-
-  const currentWeekStart = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() - now.getUTCDay(), // Sunday start
-      0,
-      0,
-      0,
-      0
-    )
-  );
-
-  console.log("📅 Week Start (UTC):", currentWeekStart);
-
-  const weeklyEarnings = await Promise.all(
-    Array.from({ length: 7 }, async (_, i) => {
-      // ✅ UTC day range
-      const dayStart = new Date(
-        Date.UTC(
-          currentWeekStart.getUTCFullYear(),
-          currentWeekStart.getUTCMonth(),
-          currentWeekStart.getUTCDate() + i,
-          0,
-          0,
-          0,
-          0
-        )
-      );
-
-      const dayEnd = new Date(
-        Date.UTC(
-          currentWeekStart.getUTCFullYear(),
-          currentWeekStart.getUTCMonth(),
-          currentWeekStart.getUTCDate() + i + 1,
-          0,
-          0,
-          0,
-          0
-        )
-      );
-
-      const dayName = format(dayStart, "EEE");
-
-      const result = await prisma.bookings.aggregate({
-        where: {
-          tutorId: tutorProfile.id,
-          status: BookingStatus.COMPLETED,
-          sessionDate: {
-            gte: dayStart,
-            lt: dayEnd,
-          },
-        },
-        _sum: { price: true },
-      });
-
-      console.log(`💰 ${dayName}:`, {
-        dayStart,
-        dayEnd,
-        result,
-      });
-
-      const totalPrice = result._sum.price ?? 0;
-      const earnings = totalPrice * 0.9;
-
-      return {
-        weekDay: dayName,
-        earnings: Math.round(earnings * 100) / 100,
-      };
-    })
-  );
-
-  console.log("📊 Weekly Earnings Data:", weeklyEarnings);
+  const weeklyEarnings = await Promise.all(data);
 
   return weeklyEarnings;
 };
-
-
-
-
-
-
 
 const sendClassLink = async (bookingId: string, classLink: string) => {
   const today = startOfDay(new Date());
