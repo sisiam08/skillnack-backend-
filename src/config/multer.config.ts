@@ -61,7 +61,7 @@ const storage = new CloudinaryStorage({
                 : "images";
 
       return {
-        folder: `skillnack/${folder}`,
+        folder: `ilmefy/${folder}`,
         public_id: uniqueName,
         resource_type: "auto",
         timeout: 120000, // 2 minutes timeout for large files

@@ -51,7 +51,7 @@ export const uploadFileToCloudinary = async (
     cloudinary.uploader
       .upload_stream(
         {
-          folder: `skillnack/${folder}`,
+          folder: `ilmefy/${folder}`,
           public_id: uniqueName,
           resource_type: "auto",
         },

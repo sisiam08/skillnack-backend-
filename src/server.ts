@@ -5,7 +5,7 @@ import config from "./config";
 let server: Server;
 
 async function main() {
-  console.log("🚀 Starting Skillnack server...");
+  console.log("🚀 Starting Ilmefy server...");
 
   try {
     console.log("📦 Environment Info:");

@@ -1,6 +1,6 @@
 # Backend
 
-Express + Prisma backend for the Skillnack tutoring platform.
+Express + Prisma backend for the Ilmefy tutoring platform.
 
 It provides the API, authentication, bookings, tutor profiles, reviews, uploads, payments, and seed data used by the frontend.
 
