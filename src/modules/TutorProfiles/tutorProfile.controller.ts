@@ -37,6 +37,15 @@ const getAllProfiles = catchAsync(async (req: Request, res: Response) => {
     ? Number.parseFloat(req.query.availability as string)
     : undefined;
 
+  const subjectId = req.query.subjectId
+    ? String(req.query.subjectId)
+    : undefined;
+
+  const skillId = req.query.skillId ? String(req.query.skillId) : undefined;
+
+  const availableToday = req.query.availableToday === "true";
+  const availableNow = req.query.availableNow === "true";
+
   const { page, limit, skip }: PaginationOptions = PaginationHelper(req.query);
 
   const { sortBy, sortOrder }: SortingOptions = SortingHelper(req.query);
@@ -53,6 +62,10 @@ const getAllProfiles = catchAsync(async (req: Request, res: Response) => {
     sortOrder,
     rating,
     availability,
+    subjectId,
+    skillId,
+    availableToday,
+    availableNow,
   );
 
   res.status(Status.OK).json({

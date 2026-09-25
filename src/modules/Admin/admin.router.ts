@@ -6,6 +6,8 @@ import { AdminControllers } from "./admin.controller";
 import {
   getAllUsersValidationSchema,
   updateUserStatusValidationSchema,
+  getAllTutorsValidationSchema,
+  updateTutorVerificationValidationSchema,
 } from "./admin.validation";
 
 const router = express.Router();
@@ -28,6 +30,20 @@ router.get(
   "/stats",
   auth_middleware([UserRole.ADMIN]),
   AdminControllers.getStats,
+);
+
+router.get(
+  "/tutors",
+  auth_middleware([UserRole.ADMIN]),
+  validateRequest(getAllTutorsValidationSchema),
+  AdminControllers.getAllTutors,
+);
+
+router.patch(
+  "/tutors/:id/verification",
+  auth_middleware([UserRole.ADMIN]),
+  validateRequest(updateTutorVerificationValidationSchema),
+  AdminControllers.updateTutorVerification,
 );
 
 export const AdminRouters = router;

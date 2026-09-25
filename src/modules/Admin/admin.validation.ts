@@ -18,3 +18,29 @@ export const updateUserStatusValidationSchema = z.object({
     id: z.string().min(1, "User ID is required"),
   }),
 });
+
+export const getAllTutorsValidationSchema = z.object({
+  query: z.object({
+    verificationStatus: z
+      .enum(["PENDING", "APPROVED", "REJECTED"])
+      .optional(),
+    search: z.string().optional(),
+    page: z.string().optional(),
+    limit: z.string().optional(),
+  }),
+});
+
+export const updateTutorVerificationValidationSchema = z.object({
+  body: z.object({
+    status: z.enum(["APPROVED", "REJECTED"], {
+      message: "Status must be APPROVED or REJECTED",
+    }),
+    rejectionReason: z
+      .string()
+      .max(500, "Reason must be at most 500 characters")
+      .optional(),
+  }),
+  params: z.object({
+    id: z.string().min(1, "Tutor profile ID is required"),
+  }),
+});

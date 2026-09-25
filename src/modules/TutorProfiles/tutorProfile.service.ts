@@ -11,11 +11,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { BookingStatus } from "../../generated/enums";
-import {
-  TutorProfilesCreateInput,
-  TutorProfilesUpdateInput,
-} from "../../generated/models";
+import { BookingStatus, VerificationStatus } from "../../generated/enums";
 import { calculateTutionPrice } from "../../helpers/CalculateTutionPrice";
 import {
   isOverlapping,
@@ -28,11 +24,141 @@ import { prisma } from "../../lib/prisma";
 import { refreshBookingData } from "../../helpers/RefreshBookingData";
 import createAppError from "../../errors/appError";
 import { Status } from "../../errors/httpStatus";
-import { ta } from "date-fns/locale";
 
-const createProfile = async (tutorData: TutorProfilesCreateInput) => {
+type TutorProfilePayload = {
+  userId: string;
+  categoriesId?: string | null;
+  bio?: string | null;
+  experienceYears: number;
+  hourlyRate: number;
+  tags?: string[];
+  headline?: string | null;
+  currentRoleOrInstitution?: string | null;
+  linkedinUrl?: string | null;
+  githubUrl?: string | null;
+  portfolioUrl?: string | null;
+  subjectIds?: string[];
+  skillIds?: string[];
+};
+
+const profileInclude = () => ({
+  user: true,
+  category: true,
+  availability: true,
+  subjects: true,
+  skills: true,
+  bookings: {
+    where: { status: BookingStatus.COMPLETED },
+    include: {
+      reviews: {
+        select: {
+          rating: true,
+          comment: true,
+        },
+      },
+    },
+  },
+});
+
+type AvailabilityFlags = { availableToday: boolean; availableNow: boolean };
+
+/**
+ * Batch-computes "available today / next 2 hours" flags for a set of tutors.
+ * Uses exactly two queries total (availability + confirmed bookings for today)
+ * regardless of how many tutors are passed — avoids N+1.
+ *
+ * Timezone follows the existing project convention of a hard-coded +6h offset
+ * (see TimeHelpers / RefreshBookingData).
+ */
+const computeTutorAvailabilityFlags = async (
+  tutorIds: string[],
+): Promise<Record<string, AvailabilityFlags>> => {
+  if (tutorIds.length === 0) return {};
+
+  const now = addHours(new Date(), 6);
+  const todayStr = format(now, "yyyy-MM-dd");
+  const todayDow = new Date(todayStr).getDay();
+  const nowMinutes = getHours(now) * 60 + getMinutes(now);
+
+  const [slots, bookings] = await Promise.all([
+    prisma.tutorAvailability.findMany({
+      where: {
+        tutorId: { in: tutorIds },
+        dayOfWeek: todayDow,
+        isActive: true,
+      },
+      select: { tutorId: true, startTime: true, endTime: true },
+    }),
+    prisma.bookings.findMany({
+      where: {
+        tutorId: { in: tutorIds },
+        sessionDate: new Date(todayStr),
+        status: BookingStatus.CONFIRMED,
+      },
+      select: { tutorId: true, startTime: true, endTime: true },
+    }),
+  ]);
+
+  const slotsByTutor = new Map<string, { startTime: string; endTime: string }[]>();
+  for (const slot of slots) {
+    const list = slotsByTutor.get(slot.tutorId) ?? [];
+    list.push({ startTime: slot.startTime, endTime: slot.endTime });
+    slotsByTutor.set(slot.tutorId, list);
+  }
+
+  const bookingsByTutor = new Map<string, { startTime: string; endTime: string }[]>();
+  for (const booking of bookings) {
+    const list = bookingsByTutor.get(booking.tutorId) ?? [];
+    list.push({ startTime: booking.startTime, endTime: booking.endTime });
+    bookingsByTutor.set(booking.tutorId, list);
+  }
+
+  const result: Record<string, AvailabilityFlags> = {};
+
+  for (const tutorId of tutorIds) {
+    const tutorSlots = slotsByTutor.get(tutorId) ?? [];
+    const tutorBookings = bookingsByTutor.get(tutorId) ?? [];
+
+    let availableToday = false;
+    let availableNow = false;
+
+    for (const slot of tutorSlots) {
+      const freeRanges = subtractBookedFromFreeSlots(slot, tutorBookings);
+
+      for (const range of freeRanges) {
+        const start = timeToMinutes(range.startTime);
+        const end = timeToMinutes(range.endTime);
+
+        if (end <= nowMinutes) continue;
+
+        availableToday = true;
+
+        if (start <= nowMinutes + 120) {
+          availableNow = true;
+        }
+      }
+    }
+
+    result[tutorId] = { availableToday, availableNow };
+  }
+
+  return result;
+};
+
+const createProfile = async (tutorData: TutorProfilePayload) => {
+  const { subjectIds = [], skillIds = [], ...rest } = tutorData;
+
   return await prisma.tutorProfiles.create({
-    data: tutorData,
+    data: {
+      ...rest,
+      subjects: subjectIds.length
+        ? { connect: subjectIds.map((id) => ({ id })) }
+        : undefined,
+      skills: skillIds.length
+        ? { connect: skillIds.map((id) => ({ id })) }
+        : undefined,
+    },
+    include: profileInclude(),
   });
 };
 
@@ -48,6 +174,10 @@ const getAllProfiles = async (
   sortOrder?: string,
   rating?: number | undefined,
   availability?: number | undefined,
+  subjectId?: string | undefined,
+  skillId?: string | undefined,
+  availableToday?: boolean,
+  availableNow?: boolean,
 ) => {
   const andConsditions: any[] = [];
 
@@ -155,36 +285,109 @@ const getAllProfiles = async (
       },
     });
   }
+
+  if (subjectId) {
+    andConsditions.push({
+      subjects: {
+        some: {
+          id: subjectId,
+        },
+      },
+    });
+  }
+
+  if (skillId) {
+    andConsditions.push({
+      skills: {
+        some: {
+          id: skillId,
+        },
+      },
+    });
+  }
+
   const isPaginated = limit !== undefined;
+
+  const baseWhere = {
+    AND: [...andConsditions],
+    user: {
+      status: "UNBAN" as const,
+    },
+    verificationStatus: VerificationStatus.APPROVED,
+  };
+
+  const wantsAvailabilityFilter = Boolean(availableToday || availableNow);
+
+  // Availability filtering must be evaluated against real free slots, which cannot be
+  // expressed as a cheap SQL predicate here. To keep it batched (no N+1) we:
+  //   1) narrow candidates with a single indexed `dayOfWeek` availability predicate,
+  //   2) batch-compute exact free-slot flags for the candidates (2 queries total),
+  //   3) filter + paginate in memory.
+  // The default (no availability filter) path keeps normal DB pagination untouched.
+  if (wantsAvailabilityFilter) {
+    const now = addHours(new Date(), 6);
+    const todayDow = new Date(format(now, "yyyy-MM-dd")).getDay();
+
+    const candidates = await prisma.tutorProfiles.findMany({
+      where: {
+        ...baseWhere,
+        AND: [
+          ...andConsditions,
+          { availability: { some: { dayOfWeek: todayDow, isActive: true } } },
+        ],
+      },
+      orderBy: {
+        [sortBy as string]: sortOrder,
+      },
+      include: profileInclude(),
+    });
+
+    const flags = await computeTutorAvailabilityFlags(
+      candidates.map((candidate) => candidate.id),
+    );
+
+    let filtered = candidates.filter((candidate) => {
+      const flag = flags[candidate.id];
+      if (!flag) return false;
+      return availableNow ? flag.availableNow : flag.availableToday;
+    });
+
+    if (rating) {
+      filtered = filtered.filter((tutor) => {
+        if (tutor.totalReviews === 0) return false;
+        return tutor.totalRating / tutor.totalReviews >= rating;
+      });
+    }
+
+    const totalData = filtered.length;
+    const pageItems = isPaginated
+      ? filtered.slice(skip as number, (skip as number) + (limit as number))
+      : filtered;
+
+    const data = pageItems.map((tutor) => ({
+      ...tutor,
+      availableToday: flags[tutor.id]?.availableToday ?? false,
+      availableNow: flags[tutor.id]?.availableNow ?? false,
+    }));
+
+    return {
+      data,
+      pagination: {
+        totalData,
+        page,
+        limit,
+        totalPages: Math.ceil(totalData / (limit as number)),
+      },
+    };
+  }
 
   const result = await prisma.tutorProfiles.findMany({
     ...(isPaginated && { skip: skip as number, take: limit as number }),
-
-    where: {
-      AND: [...andConsditions],
-      user: {
-        status: "UNBAN",
-      },
-    },
+    where: baseWhere,
     orderBy: {
       [sortBy as string]: sortOrder,
     },
-    include: {
-      user: true,
-      category: true,
-      availability: true,
-      bookings: {
-        where: { status: BookingStatus.COMPLETED },
-        include: {
-          reviews: {
-            select: {
-              rating: true,
-              comment: true,
-            },
-          },
-        },
-      },
-    },
+    include: profileInclude(),
   });
 
   let filteredResult = result;
@@ -196,13 +399,18 @@ const getAllProfiles = async (
     });
   }
 
+  const availabilityFlags = await computeTutorAvailabilityFlags(
+    filteredResult.map((tutor) => tutor.id),
+  );
+
+  filteredResult = filteredResult.map((tutor) => ({
+    ...tutor,
+    availableToday: availabilityFlags[tutor.id]?.availableToday ?? false,
+    availableNow: availabilityFlags[tutor.id]?.availableNow ?? false,
+  }));
+
   let totalData = await prisma.tutorProfiles.count({
-    where: {
-      AND: [...andConsditions],
-      user: {
-        status: "UNBAN",
-      },
-    },
+    where: baseWhere,
   });
 
   totalData = rating ? filteredResult.length : totalData;
@@ -216,72 +424,35 @@ const getAllProfiles = async (
 };
 
 const getProfileById = async (id: string) => {
-  return await prisma.tutorProfiles.findUnique({
-    where: { id },
-    include: {
-      user: true,
-      category: true,
-      availability: true,
-      bookings: {
-        where: { status: BookingStatus.COMPLETED },
-        include: {
-          reviews: {
-            select: {
-              rating: true,
-              comment: true,
-            },
-          },
-        },
-      },
-    },
+  return await prisma.tutorProfiles.findFirst({
+    where: { id, verificationStatus: VerificationStatus.APPROVED },
+    include: profileInclude(),
   });
 };
 
 const getMyProfile = async (userId: string) => {
   return await prisma.tutorProfiles.findUnique({
     where: { userId },
-    include: {
-      user: true,
-      category: true,
-      availability: true,
-      bookings: {
-        where: { status: BookingStatus.COMPLETED },
-        include: {
-          reviews: {
-            select: {
-              rating: true,
-              comment: true,
-            },
-          },
-        },
-      },
-    },
+    include: profileInclude(),
   });
 };
 
 const updateProfile = async (
   userId: string,
-  tutorData: TutorProfilesUpdateInput,
+  tutorData: Partial<TutorProfilePayload>,
 ) => {
+  const { subjectIds, skillIds, userId: _ignored, ...rest } = tutorData;
+
   return await prisma.tutorProfiles.update({
     where: { userId },
-    data: tutorData,
-    include: {
-      user: true,
-      category: true,
-      availability: true,
-      bookings: {
-        where: { status: BookingStatus.COMPLETED },
-        include: {
-          reviews: {
-            select: {
-              rating: true,
-              comment: true,
-            },
-          },
-        },
-      },
+    data: {
+      ...rest,
+      ...(subjectIds
+        ? { subjects: { set: subjectIds.map((id) => ({ id })) } }
+        : {}),
+      ...(skillIds ? { skills: { set: skillIds.map((id) => ({ id })) } } : {}),
     },
+    include: profileInclude(),
   });
 };
 
@@ -404,6 +575,10 @@ const getAvailableSlots = async (
 
       let currentStart = freeStartMin;
 
+      // Step by the slot duration for sub-hour sessions (so 30-min slots can start
+      // on the half-hour), otherwise keep the historical 60-minute stepping.
+      const step = slotDuration <= 60 ? slotDuration : 60;
+
       while (currentStart + slotDuration <= freeEndMin) {
         const endMin = currentStart + slotDuration;
 
@@ -412,7 +587,7 @@ const getAvailableSlots = async (
           endTime: minutesToTime(endMin),
         });
 
-        currentStart = currentStart + 60;
+        currentStart = currentStart + step;
       }
     });
   });

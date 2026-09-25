@@ -1,6 +1,85 @@
-import { UserRole, UserStatus } from "../../generated/enums";
+import {
+  UserRole,
+  UserStatus,
+  VerificationStatus,
+} from "../../generated/enums";
 import { prisma } from "../../lib/prisma";
 import { addHours, startOfMonth } from "date-fns";
+
+const getAllTutors = async (
+  verificationStatus?: VerificationStatus,
+  search?: string,
+  page?: number,
+  limit?: number,
+  skip?: number,
+) => {
+  const where: any = {};
+
+  if (verificationStatus) {
+    where.verificationStatus = verificationStatus;
+  }
+
+  if (search) {
+    where.OR = [
+      { user: { name: { contains: search, mode: "insensitive" } } },
+      { user: { email: { contains: search, mode: "insensitive" } } },
+      { headline: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const isPaginated = limit !== undefined;
+
+  const [result, totalData] = await Promise.all([
+    prisma.tutorProfiles.findMany({
+      ...(isPaginated && { skip: skip as number, take: limit as number }),
+      where,
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            status: true,
+          },
+        },
+        category: { select: { id: true, name: true } },
+        subjects: { select: { id: true, name: true } },
+        skills: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.tutorProfiles.count({ where }),
+  ]);
+
+  const totalPages = Math.ceil(totalData / (limit as number));
+
+  return {
+    data: result,
+    pagination: {
+      totalData,
+      page,
+      limit,
+      totalPages,
+    },
+  };
+};
+
+const updateTutorVerification = async (
+  tutorProfileId: string,
+  status: VerificationStatus,
+  rejectionReason?: string,
+) => {
+  return await prisma.tutorProfiles.update({
+    where: { id: tutorProfileId },
+    data: {
+      verificationStatus: status,
+      rejectionReason: status === VerificationStatus.REJECTED
+        ? rejectionReason ?? null
+        : null,
+    },
+  });
+};
 
 const getAllUsers = async (
   search?: string,
@@ -155,4 +234,6 @@ export const AdminServices = {
   getAllUsers,
   updateUser,
   getStats,
+  getAllTutors,
+  updateTutorVerification,
 };

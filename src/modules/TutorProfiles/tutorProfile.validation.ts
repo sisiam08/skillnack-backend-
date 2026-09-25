@@ -8,6 +8,13 @@ export const createTutorProfileValidationSchema = z.object({
     experienceYears: z.number().min(0, "Experience must be non-negative"),
     hourlyRate: z.number().min(0, "Hourly rate must be non-negative"),
     tags: z.array(z.string()).optional(),
+    subjectIds: z.array(z.string()).max(30).optional(),
+    skillIds: z.array(z.string()).max(30).optional(),
+    headline: z.string().max(100, "Headline must be at most 100 characters").optional(),
+    currentRoleOrInstitution: z.string().max(200).optional(),
+    linkedinUrl: z.union([z.string().url(), z.literal("")]).optional(),
+    githubUrl: z.union([z.string().url(), z.literal("")]).optional(),
+    portfolioUrl: z.union([z.string().url(), z.literal("")]).optional(),
   }),
 });
 
@@ -24,6 +31,13 @@ export const updateTutorProfileValidationSchema = z.object({
       .min(0, "Hourly rate must be non-negative")
       .optional(),
     tags: z.array(z.string()).optional(),
+    subjectIds: z.array(z.string()).max(30).optional(),
+    skillIds: z.array(z.string()).max(30).optional(),
+    headline: z.string().max(100, "Headline must be at most 100 characters").optional(),
+    currentRoleOrInstitution: z.string().max(200).optional(),
+    linkedinUrl: z.union([z.string().url(), z.literal("")]).optional(),
+    githubUrl: z.union([z.string().url(), z.literal("")]).optional(),
+    portfolioUrl: z.union([z.string().url(), z.literal("")]).optional(),
   }),
 });
 
@@ -37,6 +51,10 @@ export const getAllTutorProfilesValidationSchema = z.object({
     minPrice: z.string().optional(),
     rating: z.string().optional(),
     availability: z.string().optional(),
+    subjectId: z.string().optional(),
+    skillId: z.string().optional(),
+    availableToday: z.string().optional(),
+    availableNow: z.string().optional(),
     page: z.string().optional(),
     limit: z.string().optional(),
     sortBy: z.string().optional(),
