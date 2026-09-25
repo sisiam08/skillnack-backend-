@@ -1,0 +1,32 @@
+// Structured expertise taxonomy.
+// Subject  -> university/course use cases ("Data Structures", "Circuit Analysis")
+// Skill    -> job-holder use cases ("React", "SQL", "Interview Prep")
+// Both are grouped by the existing broad `Categories` model.
+
+model Subject {
+  id         String   @id @default(uuid())
+  name       String   @unique @db.VarChar(150)
+  isActive   Boolean  @default(true)
+  categoryId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   Categories?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tutors     TutorProfiles[]
+
+  @@index([name])
+  @@map("subjects")
+}
+
+model Skill {
+  id         String   @id @default(uuid())
+  name       String   @unique @db.VarChar(150)
+  isActive   Boolean  @default(true)
+  categoryId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   Categories?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tutors     TutorProfiles[]
+
+  @@index([name])
+  @@map("skills")
+}

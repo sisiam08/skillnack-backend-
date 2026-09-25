@@ -7,6 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
+    "migrate:tags": "tsx prisma/migrateTutorTags.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

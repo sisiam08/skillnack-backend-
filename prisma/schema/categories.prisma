@@ -3,6 +3,8 @@ model Categories {
   name          String          @unique @db.VarChar(100)
   isActive      Boolean         @default(true)
   tutorProfiles TutorProfiles[]
+  subjects      Subject[]
+  skills        Skill[]
 
   @@index([name])
   @@map("categories")

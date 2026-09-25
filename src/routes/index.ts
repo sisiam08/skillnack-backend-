@@ -2,6 +2,8 @@ import { Router } from "express";
 import { IRoute } from "../interfaces";
 import { TutorProfileRouters } from "../modules/TutorProfiles/tutorProfile.router";
 import { CategoryRouters } from "../modules/Categories/category.router";
+import { SubjectRouters } from "../modules/Subjects/subject.router";
+import { SkillRouters } from "../modules/Skills/skill.router";
 import { BookingRouters } from "../modules/Bookings/booking.router";
 import { UserRouters } from "../modules/Users/user.router";
 import { AdminRouters } from "../modules/Admin/admin.router";
@@ -31,6 +33,14 @@ const routes: IRoute[] = [
   {
     path: "/categories",
     route: CategoryRouters,
+  },
+  {
+    path: "/subjects",
+    route: SubjectRouters,
+  },
+  {
+    path: "/skills",
+    route: SkillRouters,
   },
   {
     path: "/bookings",
