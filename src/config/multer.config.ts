@@ -73,23 +73,35 @@ const storage = new CloudinaryStorage({
   },
 });
 
+const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
+  if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+    return cb(
+      createAppError(
+        `File type not allowed. Allowed types: images, PDFs, documents, PowerPoints, and text files`,
+        Status.BAD_REQUEST,
+      ) as any,
+    );
+  }
+  cb(null, true);
+};
+
 export const upload = multer({
   storage,
   limits: {
     fileSize: FILE_SIZE_LIMIT,
     files: 1,
   },
-  fileFilter: (req, file, cb) => {
-    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-      return cb(
-        createAppError(
-          `File type not allowed. Allowed types: images, PDFs, documents, PowerPoints, and text files`,
-          Status.BAD_REQUEST,
-        ) as any,
-      );
-    }
-    cb(null, true);
+  fileFilter,
+});
+
+// Booking-request attachments: up to 5 files, otherwise identical to `upload`.
+export const uploadMultiple = multer({
+  storage,
+  limits: {
+    fileSize: FILE_SIZE_LIMIT,
+    files: 5,
   },
+  fileFilter,
 });
 
 export { storage, handleMulterErrors };

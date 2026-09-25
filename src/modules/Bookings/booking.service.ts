@@ -1,5 +1,11 @@
 import { v7 as uuidv7 } from "uuid";
-import { BookingStatus, UserRole } from "../../generated/enums";
+import {
+  BookingGoalType,
+  BookingStatus,
+  SessionOutcome,
+  UserRole,
+  VerificationStatus,
+} from "../../generated/enums";
 import { calculateTutionPrice } from "../../helpers/CalculateTutionPrice";
 import {
   convertInto12h,
@@ -22,13 +28,27 @@ const createBooking = async (
     sessionDate: string;
     startTime: string;
     endTime: string;
+    title?: string;
+    description?: string;
+    goalType?: BookingGoalType;
+    attachments?: string[];
     currentTime?: string;
     todayDate?: string;
   },
 ) => {
   return await prisma.$transaction(async (tx) => {
-    const { tutorId, sessionDate, startTime, endTime, currentTime, todayDate } =
-      bookingData;
+    const {
+      tutorId,
+      sessionDate,
+      startTime,
+      endTime,
+      title,
+      description,
+      goalType,
+      attachments,
+      currentTime,
+      todayDate,
+    } = bookingData;
 
     const date = new Date(sessionDate);
     const dayOfWeek = date.getDay();
@@ -97,6 +117,7 @@ const createBooking = async (
       where: { id: tutorId },
       select: {
         hourlyRate: true,
+        verificationStatus: true,
         user: {
           select: {
             name: true,
@@ -109,6 +130,13 @@ const createBooking = async (
       throw createAppError("Tutor not found", Status.NOT_FOUND);
     }
 
+    if (tutor.verificationStatus !== VerificationStatus.APPROVED) {
+      throw createAppError(
+        "This tutor is not available for booking yet",
+        Status.BAD_REQUEST,
+      );
+    }
+
     const price = calculateTutionPrice(slotDuration, tutor.hourlyRate);
 
     const booking = await tx.bookings.create({
@@ -119,6 +147,10 @@ const createBooking = async (
         startTime,
         endTime,
         price,
+        title: title ?? null,
+        description: description ?? null,
+        goalType: goalType ?? null,
+        attachments: attachments ?? [],
       },
     });
 
@@ -310,6 +342,133 @@ const getBookingDetails = async (bookingId: string) => {
   });
 };
 
+const recordOutcome = async (
+  studentId: string,
+  bookingId: string,
+  outcome: SessionOutcome,
+) => {
+  return await prisma.$transaction(async (tx) => {
+    const booking = await tx.bookings.findUnique({
+      where: { id: bookingId },
+      select: {
+        id: true,
+        studentId: true,
+        tutorId: true,
+        status: true,
+        outcome: true,
+      },
+    });
+
+    if (!booking) {
+      throw createAppError("Booking not found", Status.NOT_FOUND);
+    }
+
+    if (booking.studentId !== studentId) {
+      throw createAppError(
+        "You don't have permission to update this booking",
+        Status.FORBIDDEN,
+      );
+    }
+
+    if (booking.status !== BookingStatus.COMPLETED) {
+      throw createAppError(
+        "Outcome can only be recorded for completed sessions",
+        Status.BAD_REQUEST,
+      );
+    }
+
+    if (booking.outcome) {
+      throw createAppError(
+        "Outcome already recorded for this booking",
+        Status.CONFLICT,
+      );
+    }
+
+    await tx.tutorProfiles.update({
+      where: { id: booking.tutorId },
+      data: {
+        totalOutcomesRecorded: { increment: 1 },
+        ...(outcome === SessionOutcome.SOLVED
+          ? { solvedCount: { increment: 1 } }
+          : {}),
+      },
+    });
+
+    return await tx.bookings.update({
+      where: { id: bookingId },
+      data: { outcome, outcomeAt: new Date() },
+    });
+  });
+};
+
+const SUMMARY_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+const updateBookingSummary = async (
+  userId: string,
+  bookingId: string,
+  summary: string,
+) => {
+  return await prisma.$transaction(async (tx) => {
+    const tutorProfile = await tx.tutorProfiles.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!tutorProfile) {
+      throw createAppError("Tutor profile not found", Status.NOT_FOUND);
+    }
+
+    const booking = await tx.bookings.findUnique({
+      where: { id: bookingId },
+      select: {
+        id: true,
+        tutorId: true,
+        status: true,
+        summaryAt: true,
+      },
+    });
+
+    if (!booking) {
+      throw createAppError("Booking not found", Status.NOT_FOUND);
+    }
+
+    if (booking.tutorId !== tutorProfile.id) {
+      throw createAppError(
+        "You don't have permission to update this booking",
+        Status.FORBIDDEN,
+      );
+    }
+
+    if (booking.status !== BookingStatus.COMPLETED) {
+      throw createAppError(
+        "A summary can only be added after the session is completed",
+        Status.BAD_REQUEST,
+      );
+    }
+
+    const now = new Date();
+
+    if (
+      booking.summaryAt &&
+      now.getTime() - booking.summaryAt.getTime() > SUMMARY_EDIT_WINDOW_MS
+    ) {
+      throw createAppError(
+        "The 24-hour editing window for this summary has passed",
+        Status.FORBIDDEN,
+      );
+    }
+
+    return await tx.bookings.update({
+      where: { id: bookingId },
+      data: {
+        summary,
+        summaryAt: booking.summaryAt ?? now,
+        summaryUpdatedAt: now,
+      },
+    });
+  });
+};
+
 const updateBookingStatus = async (
   userId: string,
   userRole: UserRole,
@@ -342,5 +501,7 @@ export const BookingServices = {
   getAllBookings,
   getMyBookings,
   getBookingDetails,
+  recordOutcome,
+  updateBookingSummary,
   updateBookingStatus,
 };

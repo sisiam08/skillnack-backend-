@@ -9,11 +9,15 @@ import { Status } from "../../errors/httpStatus";
 const createBooking = catchAsync(async (req: Request, res: Response) => {
   const studentId = req.user!.id;
   const bookingData = req.body;
+  const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+  const attachments = files
+    .map((file) => (file as any).path || (file as any).url)
+    .filter(Boolean) as string[];
 
-  const data = await BookingServices.createBooking(
-    studentId,
-    bookingData,
-  );
+  const data = await BookingServices.createBooking(studentId, {
+    ...bookingData,
+    attachments,
+  });
 
   return res.status(Status.CREATED).json({
     success: true,
@@ -79,6 +83,42 @@ const getBookingDetails = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const recordOutcome = catchAsync(async (req: Request, res: Response) => {
+  const studentId = req.user!.id;
+  const bookingId = req.params.id as string;
+  const { outcome } = req.body;
+
+  const data = await BookingServices.recordOutcome(
+    studentId,
+    bookingId,
+    outcome,
+  );
+
+  return res.status(Status.OK).json({
+    success: true,
+    message: "Outcome recorded successfully",
+    data,
+  });
+});
+
+const updateBookingSummary = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const bookingId = req.params.id as string;
+  const { summary } = req.body;
+
+  const data = await BookingServices.updateBookingSummary(
+    userId,
+    bookingId,
+    summary,
+  );
+
+  return res.status(Status.OK).json({
+    success: true,
+    message: "Session summary saved successfully",
+    data,
+  });
+});
+
 const updateBookingStatus = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id as string;
   const userRole = req.user?.role as UserRole;
@@ -108,5 +148,7 @@ export const BookingControllers = {
   getAllBookings,
   getMyBookings,
   getBookingDetails,
+  recordOutcome,
+  updateBookingSummary,
   updateBookingStatus,
 };

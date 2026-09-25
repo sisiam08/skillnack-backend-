@@ -25,13 +25,14 @@ export const handleMulterErrors = (
 
     // Number of files exceeds limit
     if (err.code === "LIMIT_FILE_COUNT") {
+      const message = "Too many files uploaded. Check the allowed file count for this endpoint";
       return res.status(Status.BAD_REQUEST).json({
         success: false,
-        message: "Only one file is allowed per upload",
+        message,
         errorSource: [
           {
             path: "file",
-            message: "Only one file is allowed per upload",
+            message,
           },
         ],
       });

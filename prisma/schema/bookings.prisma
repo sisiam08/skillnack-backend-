@@ -6,19 +6,39 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum BookingGoalType {
+  SOLVE_PROBLEM
+  LEARN_TOPIC
+}
+
+enum SessionOutcome {
+  SOLVED
+  PARTIALLY_SOLVED
+  NOT_SOLVED
+}
+
 model Bookings {
-  id            String        @id @default(uuid())
+  id            String           @id @default(uuid())
   studentId     String
   tutorId       String
   sessionDate   DateTime
   startTime     String
   endTime       String
   price         Float
-  status        BookingStatus @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
+  status        BookingStatus    @default(PENDING)
+  paymentStatus PaymentStatus    @default(PENDING)
   classLink     String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  title         String?          @db.VarChar(100)
+  description   String?          @db.VarChar(1000)
+  goalType      BookingGoalType?
+  attachments   String[]         @default([]) @db.VarChar(500)
+  outcome       SessionOutcome?
+  outcomeAt     DateTime?
+  summary       String?          @db.VarChar(2000)
+  summaryAt     DateTime?
+  summaryUpdatedAt DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
   student       User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   tutor         TutorProfiles @relation(fields: [tutorId], references: [id])
   reviews       Reviews?
