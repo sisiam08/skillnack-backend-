@@ -70,6 +70,18 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAnalytics = catchAsync(async (req: Request, res: Response) => {
+  const range = (req.query.range as "7d" | "30d" | "90d" | "12m") || "30d";
+
+  const data = await AdminServices.getAnalytics(range);
+
+  res.status(Status.OK).json({
+    success: true,
+    message: "Analytics retrieved successfully",
+    data,
+  });
+});
+
 const getAllTutors = catchAsync(async (req: Request, res: Response) => {
   const verificationStatus = req.query.verificationStatus
     ? (String(req.query.verificationStatus) as VerificationStatus)
@@ -117,6 +129,7 @@ export const AdminControllers = {
   getAllUsers,
   updateUser,
   getStats,
+  getAnalytics,
   getAllTutors,
   updateTutorVerification,
 };

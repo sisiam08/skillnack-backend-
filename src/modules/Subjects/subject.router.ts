@@ -1,6 +1,7 @@
 import express from "express";
 import { SubjectControllers } from "./subject.controller";
 import { auth_middleware } from "../../middleware/auth";
+import { cachePublic } from "../../middleware/cacheControl";
 import { validateRequest } from "../../middleware/validateRequest";
 import { UserRole } from "../../generated/enums";
 import {
@@ -18,7 +19,7 @@ router.post(
   SubjectControllers.createSubject,
 );
 
-router.get("/", SubjectControllers.getAllSubjects);
+router.get("/", cachePublic(60), SubjectControllers.getAllSubjects);
 
 router.patch(
   "/:id",

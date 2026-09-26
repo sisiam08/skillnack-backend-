@@ -8,6 +8,7 @@ import {
   updateUserStatusValidationSchema,
   getAllTutorsValidationSchema,
   updateTutorVerificationValidationSchema,
+  getAnalyticsValidationSchema,
 } from "./admin.validation";
 
 const router = express.Router();
@@ -30,6 +31,13 @@ router.get(
   "/stats",
   auth_middleware([UserRole.ADMIN]),
   AdminControllers.getStats,
+);
+
+router.get(
+  "/analytics",
+  auth_middleware([UserRole.ADMIN]),
+  validateRequest(getAnalyticsValidationSchema),
+  AdminControllers.getAnalytics,
 );
 
 router.get(

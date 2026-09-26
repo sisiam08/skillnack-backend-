@@ -1,6 +1,7 @@
 import express from "express";
 import { SkillControllers } from "./skill.controller";
 import { auth_middleware } from "../../middleware/auth";
+import { cachePublic } from "../../middleware/cacheControl";
 import { validateRequest } from "../../middleware/validateRequest";
 import { UserRole } from "../../generated/enums";
 import {
@@ -18,7 +19,7 @@ router.post(
   SkillControllers.createSkill,
 );
 
-router.get("/", SkillControllers.getAllSkills);
+router.get("/", cachePublic(60), SkillControllers.getAllSkills);
 
 router.patch(
   "/:id",

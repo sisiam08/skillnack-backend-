@@ -1,6 +1,7 @@
 import {
   addDays,
   addHours,
+  differenceInCalendarDays,
   endOfDay,
   format,
   getHours,
@@ -11,7 +12,11 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { BookingStatus, VerificationStatus } from "../../generated/enums";
+import {
+  BookingStatus,
+  SessionOutcome,
+  VerificationStatus,
+} from "../../generated/enums";
 import { calculateTutionPrice } from "../../helpers/CalculateTutionPrice";
 import {
   isOverlapping,
@@ -31,6 +36,7 @@ type TutorProfilePayload = {
   bio?: string | null;
   experienceYears: number;
   hourlyRate: number;
+  /** Legacy free-text tags. Accepted but intentionally ignored (never written). */
   tags?: string[];
   headline?: string | null;
   currentRoleOrInstitution?: string | null;
@@ -41,23 +47,33 @@ type TutorProfilePayload = {
   skillIds?: string[];
 };
 
+// Lean projection for tutor listings/details. Uses the denormalized counters
+// (totalRating/totalReviews/totalCompletedBookings/solvedCount) instead of
+// loading every COMPLETED booking + its reviews. The `bookings` relation is not
+// read by any tutor-facing screen.
 const profileInclude = () => ({
-  user: true,
-  category: true,
-  availability: true,
-  subjects: true,
-  skills: true,
-  bookings: {
-    where: { status: BookingStatus.COMPLETED },
-    include: {
-      reviews: {
-        select: {
-          rating: true,
-          comment: true,
-        },
-      },
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      phone: true,
+      status: true,
     },
   },
+  category: { select: { id: true, name: true } },
+  availability: {
+    select: {
+      id: true,
+      dayOfWeek: true,
+      startTime: true,
+      endTime: true,
+      isActive: true,
+    },
+  },
+  subjects: { select: { id: true, name: true } },
+  skills: { select: { id: true, name: true } },
 });
 
 type AvailabilityFlags = { availableToday: boolean; availableNow: boolean };
@@ -146,7 +162,9 @@ const computeTutorAvailabilityFlags = async (
 };
 
 const createProfile = async (tutorData: TutorProfilePayload) => {
-  const { subjectIds = [], skillIds = [], ...rest } = tutorData;
+  // `tags` is legacy free-text expertise, replaced by structured subjects/skills.
+  // It is intentionally dropped so no new tag data can be written.
+  const { subjectIds = [], skillIds = [], tags: _legacyTags, ...rest } = tutorData;
 
   return await prisma.tutorProfiles.create({
     data: {
@@ -187,9 +205,6 @@ const getAllProfiles = async (
     const numberSearch = Number(search);
 
     if (Number.isNaN(numberSearch)) {
-      const titleCaseSearch =
-        search.charAt(0).toUpperCase() + search.slice(1).toLowerCase();
-
       andConsditions.push({
         OR: [
           {
@@ -212,26 +227,6 @@ const getAllProfiles = async (
                 contains: search,
                 mode: "insensitive",
               },
-            },
-          },
-          {
-            tags: {
-              has: search,
-            },
-          },
-          {
-            tags: {
-              has: search.toLowerCase(),
-            },
-          },
-          {
-            tags: {
-              has: search.toUpperCase(),
-            },
-          },
-          {
-            tags: {
-              has: titleCaseSearch,
             },
           },
         ],
@@ -306,6 +301,15 @@ const getAllProfiles = async (
     });
   }
 
+  if (rating) {
+    const ratingRows = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "tutorProfiles"
+      WHERE "totalReviews" > 0
+        AND ("totalRating"::numeric / "totalReviews") >= ${rating}
+    `;
+    andConsditions.push({ id: { in: ratingRows.map((row) => row.id) } });
+  }
+
   const isPaginated = limit !== undefined;
 
   const baseWhere = {
@@ -318,12 +322,6 @@ const getAllProfiles = async (
 
   const wantsAvailabilityFilter = Boolean(availableToday || availableNow);
 
-  // Availability filtering must be evaluated against real free slots, which cannot be
-  // expressed as a cheap SQL predicate here. To keep it batched (no N+1) we:
-  //   1) narrow candidates with a single indexed `dayOfWeek` availability predicate,
-  //   2) batch-compute exact free-slot flags for the candidates (2 queries total),
-  //   3) filter + paginate in memory.
-  // The default (no availability filter) path keeps normal DB pagination untouched.
   if (wantsAvailabilityFilter) {
     const now = addHours(new Date(), 6);
     const todayDow = new Date(format(now, "yyyy-MM-dd")).getDay();
@@ -346,18 +344,11 @@ const getAllProfiles = async (
       candidates.map((candidate) => candidate.id),
     );
 
-    let filtered = candidates.filter((candidate) => {
+    const filtered = candidates.filter((candidate) => {
       const flag = flags[candidate.id];
       if (!flag) return false;
       return availableNow ? flag.availableNow : flag.availableToday;
     });
-
-    if (rating) {
-      filtered = filtered.filter((tutor) => {
-        if (tutor.totalReviews === 0) return false;
-        return tutor.totalRating / tutor.totalReviews >= rating;
-      });
-    }
 
     const totalData = filtered.length;
     const pageItems = isPaginated
@@ -390,35 +381,24 @@ const getAllProfiles = async (
     include: profileInclude(),
   });
 
-  let filteredResult = result;
-  if (rating) {
-    filteredResult = result.filter((tutor) => {
-      if (tutor.totalReviews === 0) return false;
-      const averageRating = tutor.totalRating / tutor.totalReviews;
-      return averageRating >= rating;
-    });
-  }
-
   const availabilityFlags = await computeTutorAvailabilityFlags(
-    filteredResult.map((tutor) => tutor.id),
+    result.map((tutor) => tutor.id),
   );
 
-  filteredResult = filteredResult.map((tutor) => ({
+  const data = result.map((tutor) => ({
     ...tutor,
     availableToday: availabilityFlags[tutor.id]?.availableToday ?? false,
     availableNow: availabilityFlags[tutor.id]?.availableNow ?? false,
   }));
 
-  let totalData = await prisma.tutorProfiles.count({
+  const totalData = await prisma.tutorProfiles.count({
     where: baseWhere,
   });
-
-  totalData = rating ? filteredResult.length : totalData;
 
   const totalPages = Math.ceil(totalData / (limit as number));
 
   return {
-    data: filteredResult,
+    data,
     pagination: { totalData, page, limit, totalPages },
   };
 };
@@ -441,7 +421,15 @@ const updateProfile = async (
   userId: string,
   tutorData: Partial<TutorProfilePayload>,
 ) => {
-  const { subjectIds, skillIds, userId: _ignored, ...rest } = tutorData;
+  // Drop legacy `tags` and client-supplied `userId`; expertise is set via
+  // structured subjects/skills only.
+  const {
+    subjectIds,
+    skillIds,
+    userId: _ignored,
+    tags: _legacyTags,
+    ...rest
+  } = tutorData;
 
   return await prisma.tutorProfiles.update({
     where: { userId },
@@ -775,163 +763,116 @@ const getTutorStats = async (userId: string) => {
 
     const tutorId = tutorProfile.id as string;
 
-    const bookingsPrice = await tx.bookings.findMany({
-      where: {
-        tutorId,
-        status: "COMPLETED",
-      },
+    // Single read for the tutor's bookings instead of ~8 separate
+    // count/aggregate queries. Earnings/date semantics preserved exactly.
+    const bookings = await tx.bookings.findMany({
+      where: { tutorId },
       select: {
+        status: true,
         price: true,
         sessionDate: true,
+        studentId: true,
+        outcome: true,
       },
     });
 
-    const earningsPerBooking = bookingsPrice.map((booking) => ({
-      earnings: booking.price * 0.9,
-      sessionDate: booking.sessionDate,
-    }));
+    const ratingTrendRaw = await tx.$queryRaw<
+      { month: Date; averageRating: number; reviewCount: number }[]
+    >`
+      SELECT date_trunc('month', r."createdAt") AS month,
+             AVG(r.rating)::float AS "averageRating",
+             COUNT(*)::int AS "reviewCount"
+      FROM "reviews" r
+      JOIN "bookings" b ON b."id" = r."bookingId"
+      WHERE b."tutorId" = ${tutorId}
+      GROUP BY 1
+      ORDER BY 1
+    `;
 
-    const [
-      totalEarnings,
-      monthlyEarnings,
-      todayEarnings,
-      totalUniqueStudents,
-      activeAvailableDays,
-      totalRatings,
-      averageRating,
-      totalReviews,
-      completedSessions,
-      todayCompletedSessions,
-      weeklyCompletedSessions,
-      canceledSessions,
-      monthlyCanceledSessions,
-      confirmedSessions,
-    ] = await Promise.all([
-      // Total Earnings
-      earningsPerBooking.reduce(
-        (accumulator, currentbooking) => accumulator + currentbooking.earnings,
+    const completed = bookings.filter(
+      (booking) => booking.status === BookingStatus.COMPLETED,
+    );
+    const cancelled = bookings.filter(
+      (booking) => booking.status === BookingStatus.CANCELLED,
+    );
+    const confirmed = bookings.filter(
+      (booking) => booking.status === BookingStatus.CONFIRMED,
+    );
+
+    const totalEarnings = completed.reduce(
+      (accumulator, booking) => accumulator + booking.price * 0.9,
+      0,
+    );
+
+    const monthlyEarnings = completed
+      .filter((booking) => booking.sessionDate > currentMonthStart)
+      .reduce(
+        (accumulator, booking) => accumulator + booking.price * 0.9,
         0,
-      ),
+      );
 
-      // Monthly Earnings
-      earningsPerBooking
-        .filter((booking) => booking.sessionDate > currentMonthStart)
-        .reduce(
-          (accumulator, currentbooking) =>
-            accumulator + currentbooking.earnings,
-          0,
-        ),
+    // Note: "today" earnings intentionally remain gross (historical behavior).
+    const earningsToday = completed
+      .filter(
+        (booking) =>
+          booking.sessionDate >= today && booking.sessionDate <= todayEnd,
+      )
+      .reduce((accumulator, booking) => accumulator + booking.price, 0);
 
-      // Today's Earnings
-      tx.bookings.aggregate({
-        where: {
-          tutorId,
-          status: BookingStatus.COMPLETED,
-          sessionDate: {
-            gte: today,
-            lte: todayEnd,
-          },
-        },
-        _sum: {
-          price: true,
-        },
-      }),
-
-      // Total Unique Students
-      tx.bookings.findMany({
-        where: {
-          tutorId,
-          status: BookingStatus.COMPLETED,
-        },
-        distinct: ["studentId"],
-        select: { studentId: true },
-      }),
-
-      // Active Available Days
-      tx.tutorAvailability.findMany({
-        where: { tutorId, isActive: true },
-        distinct: ["dayOfWeek"],
-        select: { dayOfWeek: true },
-      }),
-
-      // Total Ratings
-      tutorProfile.totalRating,
-
-      // Average Rating
-      tutorProfile.totalRating /
-        (tutorProfile.totalReviews ? tutorProfile.totalReviews : 1),
-
-      // Total Reviews
-      tutorProfile.totalReviews,
-
-      // Total Completed Sessions
-      tx.bookings.count({
-        where: { tutorId, status: BookingStatus.COMPLETED },
-      }),
-
-      // Today's Completed Sessions
-      tx.bookings.count({
-        where: {
-          tutorId,
-          status: BookingStatus.COMPLETED,
-          sessionDate: {
-            equals: today,
-          },
-        },
-      }),
-
-      // Weekly Completed Sessions
-      tx.bookings.count({
-        where: {
-          tutorId,
-          status: BookingStatus.COMPLETED,
-          sessionDate: { gte: currentWeekStart },
-        },
-      }),
-
-      // Canceled Sessions
-      tx.bookings.count({
-        where: { tutorId, status: BookingStatus.CANCELLED },
-      }),
-
-      // Monthly Canceled Sessions
-      tx.bookings.count({
-        where: {
-          tutorId,
-          status: BookingStatus.CANCELLED,
-          sessionDate: { gte: currentMonthStart },
-        },
-      }),
-
-      // Confirmed Sessions
-      tx.bookings.count({
-        where: { tutorId, status: BookingStatus.CONFIRMED },
-      }),
-    ]);
+    const activeAvailableDays = await tx.tutorAvailability.findMany({
+      where: { tutorId, isActive: true },
+      distinct: ["dayOfWeek"],
+      select: { dayOfWeek: true },
+    });
 
     return {
       earnings: {
         totalEarnings: totalEarnings ?? 0,
         earningsThisMonth: monthlyEarnings ?? 0,
-        earningsToday: todayEarnings._sum.price ?? 0,
+        earningsToday: earningsToday ?? 0,
         hourlyRate: tutorProfile.hourlyRate,
       },
       profile: {
-        uniqueStudents: totalUniqueStudents.length,
+        uniqueStudents: new Set(completed.map((booking) => booking.studentId))
+          .size,
         experienceYears: tutorProfile.experienceYears,
         activeDays: activeAvailableDays.length,
-        averageRating,
-        totalRatings,
-        reviewCount: totalReviews,
+        averageRating:
+          tutorProfile.totalRating /
+          (tutorProfile.totalReviews ? tutorProfile.totalReviews : 1),
+        totalRatings: tutorProfile.totalRating,
+        reviewCount: tutorProfile.totalReviews,
       },
       sessions: {
-        completed: completedSessions,
-        completedToday: todayCompletedSessions,
-        completedThisWeek: weeklyCompletedSessions,
-        cancelled: canceledSessions,
-        cancelledThisMonth: monthlyCanceledSessions,
-        upcoming: confirmedSessions,
+        completed: completed.length,
+        completedToday: completed.filter(
+          (booking) => booking.sessionDate.getTime() === today.getTime(),
+        ).length,
+        completedThisWeek: completed.filter(
+          (booking) => booking.sessionDate >= currentWeekStart,
+        ).length,
+        cancelled: cancelled.length,
+        cancelledThisMonth: cancelled.filter(
+          (booking) => booking.sessionDate >= currentMonthStart,
+        ).length,
+        upcoming: confirmed.length,
       },
+      outcomes: {
+        solved: bookings.filter(
+          (booking) => booking.outcome === SessionOutcome.SOLVED,
+        ).length,
+        partiallySolved: bookings.filter(
+          (booking) => booking.outcome === SessionOutcome.PARTIALLY_SOLVED,
+        ).length,
+        notSolved: bookings.filter(
+          (booking) => booking.outcome === SessionOutcome.NOT_SOLVED,
+        ).length,
+      },
+      ratingTrend: ratingTrendRaw.map((row) => ({
+        month: format(row.month, "MMM yyyy"),
+        averageRating: Number(row.averageRating.toFixed(2)),
+        reviewCount: row.reviewCount,
+      })),
     };
   });
 };
@@ -947,33 +888,37 @@ const getWeeklyEarnings = async (userId: string) => {
   }
 
   const currentWeekStart = startOfWeek(new Date());
+  const currentWeekEnd = addDays(currentWeekStart, 7);
 
-  const data = Array.from({ length: 7 }, async (_, i) => {
-    const dayStart = addDays(currentWeekStart, i);
-    const dayEnd = addDays(dayStart, 1);
-    const dayName = format(dayStart, "EEE");
-
-    const result = await prisma.bookings.aggregate({
-      where: {
-        tutorId: tutorProfile.id,
-        status: BookingStatus.COMPLETED,
-        sessionDate: {
-          gte: dayStart,
-          lt: dayEnd,
-        },
+  // Single query for the whole week instead of 7 per-day aggregates.
+  const bookings = await prisma.bookings.findMany({
+    where: {
+      tutorId: tutorProfile.id,
+      status: BookingStatus.COMPLETED,
+      sessionDate: {
+        gte: currentWeekStart,
+        lt: currentWeekEnd,
       },
-      _sum: { price: true },
-    });
-
-    return {
-      weekDay: dayName,
-      earnings: result._sum.price ?? 0,
-    };
+    },
+    select: { price: true, sessionDate: true },
   });
 
-  const weeklyEarnings = await Promise.all(data);
+  const earningsByDay = [0, 0, 0, 0, 0, 0, 0];
 
-  return weeklyEarnings;
+  for (const booking of bookings) {
+    const index = differenceInCalendarDays(
+      booking.sessionDate,
+      currentWeekStart,
+    );
+    if (index >= 0 && index < 7) {
+      earningsByDay[index] += booking.price;
+    }
+  }
+
+  return Array.from({ length: 7 }, (_, i) => ({
+    weekDay: format(addDays(currentWeekStart, i), "EEE"),
+    earnings: earningsByDay[i],
+  }));
 };
 
 const sendClassLink = async (bookingId: string, classLink: string) => {

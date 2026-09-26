@@ -7,5 +7,6 @@ model TutorAvailability {
   isActive  Boolean       @default(true)
   tutor     TutorProfiles @relation(fields: [tutorId], references: [id], onDelete: Cascade)
 
+  @@index([tutorId, dayOfWeek, isActive])
   @@map("tutorAvailability")
 }

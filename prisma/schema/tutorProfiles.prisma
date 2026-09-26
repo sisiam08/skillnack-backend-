@@ -35,5 +35,8 @@ model TutorProfiles {
   skills                 Skill[]
 
   @@index([userId])
+  @@index([verificationStatus, categoriesId])
+  @@index([hourlyRate])
+  @@index([totalRating])
   @@map("tutorProfiles")
 }

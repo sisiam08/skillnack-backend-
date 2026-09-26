@@ -30,6 +30,12 @@ export const getAllTutorsValidationSchema = z.object({
   }),
 });
 
+export const getAnalyticsValidationSchema = z.object({
+  query: z.object({
+    range: z.enum(["7d", "30d", "90d", "12m"]).optional(),
+  }),
+});
+
 export const updateTutorVerificationValidationSchema = z.object({
   body: z.object({
     status: z.enum(["APPROVED", "REJECTED"], {

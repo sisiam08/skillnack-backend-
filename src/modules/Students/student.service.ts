@@ -12,6 +12,8 @@ const getStudentStats = async (userId: string) => {
       completedSessions,
       totalSpent,
       refundableAmount,
+      spendByMonth,
+      sessionsByCategory,
     ] = await Promise.all([
       // Total Bookings
       tx.bookings.count({
@@ -55,6 +57,42 @@ const getStudentStats = async (userId: string) => {
           price: true,
         },
       }),
+
+      // Paid spend per calendar month (last 6 months, zero-filled).
+      // Money-over-time uses Payment.createdAt (when collected), not sessionDate.
+      tx.$queryRaw<{ month: string; amount: number }[]>`
+        WITH buckets AS (
+          SELECT generate_series(
+            date_trunc('month', (now() AT TIME ZONE 'UTC') + interval '6 hours') - interval '5 months',
+            date_trunc('month', (now() AT TIME ZONE 'UTC') + interval '6 hours'),
+            interval '1 month'
+          ) AS bucket
+        )
+        SELECT to_char(b.bucket, 'Mon YYYY') AS month,
+               COALESCE(SUM(pay.amount), 0)::float AS amount
+        FROM buckets b
+        LEFT JOIN (
+          SELECT p.amount, (p."createdAt" + interval '6 hours') AS shifted
+          FROM "payment" p
+          JOIN "bookings" bk ON bk."id" = p."bookingId"
+          WHERE bk."studentId" = ${userId} AND p.status = 'PAID'
+        ) pay
+          ON pay.shifted >= b.bucket
+         AND pay.shifted < b.bucket + interval '1 month'
+        GROUP BY b.bucket
+        ORDER BY b.bucket
+      `,
+
+      // Sessions booked per tutor category (demand for this student).
+      tx.$queryRaw<{ category: string; count: number }[]>`
+        SELECT COALESCE(c.name, 'Uncategorized') AS category, COUNT(*)::int AS count
+        FROM "bookings" b
+        JOIN "tutorProfiles" tp ON tp."id" = b."tutorId"
+        LEFT JOIN "categories" c ON c."id" = tp."categoriesId"
+        WHERE b."studentId" = ${userId}
+        GROUP BY 1
+        ORDER BY count DESC
+      `,
     ]);
 
     const completionRate =
@@ -67,6 +105,8 @@ const getStudentStats = async (userId: string) => {
       completionRate,
       totalSpent: totalSpent._sum.price || 0,
       refundableAmount: refundableAmount._sum.price || 0,
+      spendByMonth,
+      sessionsByCategory,
     };
   });
 };

@@ -2,6 +2,11 @@ import { prisma } from "../../lib/prisma";
 import createAppError from "../../errors/appError";
 import { Status } from "../../errors/httpStatus";
 
+// Safety cap so review reads stay bounded. Full cursor pagination is proposed
+// as a follow-up (see PERFORMANCE_REPORT.md); the response stays an array to
+// preserve the current contract.
+const REVIEW_FETCH_LIMIT = 100;
+
 const createReview = async (reviewData: {
   bookingId: string;
   rating: number;
@@ -40,6 +45,7 @@ const getAllReviews = async () => {
     orderBy: {
       rating: "desc",
     },
+    take: REVIEW_FETCH_LIMIT,
     include: {
       booking: {
         select: {
@@ -87,6 +93,7 @@ const getAllReviewsForTutor = async (tutorId: string) => {
     orderBy: {
       rating: "desc",
     },
+    take: REVIEW_FETCH_LIMIT,
     include: {
       booking: {
         select: {

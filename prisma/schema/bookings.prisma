@@ -45,5 +45,7 @@ model Bookings {
   payment       Payment?
 
   @@index([id])
+  @@index([tutorId, sessionDate, status])
+  @@index([studentId, status])
   @@map("bookings")
 }

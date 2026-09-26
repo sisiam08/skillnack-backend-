@@ -35,6 +35,10 @@ async function main() {
         try {
           const { seedAdmin } = await import("../prisma/seed");
           await seedAdmin();
+
+          const { seedTaxonomy } = await import("../prisma/seedTaxonomy");
+          await seedTaxonomy();
+
           console.log("✅ Seed completed successfully");
         } catch (seedError: any) {
           console.warn("⚠️ Seed warning:", seedError.message);

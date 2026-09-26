@@ -1,6 +1,7 @@
 import express, { Application } from "express";
 import { CategoryControllers } from "./category.controller";
 import { auth_middleware } from "../../middleware/auth";
+import { cachePublic } from "../../middleware/cacheControl";
 import { validateRequest } from "../../middleware/validateRequest";
 import { UserRole } from "../../generated/enums";
 import {
@@ -18,7 +19,7 @@ router.post(
   CategoryControllers.createCategory,
 );
 
-router.get("/", CategoryControllers.getAllCategories);
+router.get("/", cachePublic(60), CategoryControllers.getAllCategories);
 
 router.patch(
   "/:id",

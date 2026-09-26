@@ -7,7 +7,6 @@ export const createTutorProfileValidationSchema = z.object({
     bio: z.string().optional(),
     experienceYears: z.number().min(0, "Experience must be non-negative"),
     hourlyRate: z.number().min(0, "Hourly rate must be non-negative"),
-    tags: z.array(z.string()).optional(),
     subjectIds: z.array(z.string()).max(30).optional(),
     skillIds: z.array(z.string()).max(30).optional(),
     headline: z.string().max(100, "Headline must be at most 100 characters").optional(),
@@ -30,7 +29,6 @@ export const updateTutorProfileValidationSchema = z.object({
       .number()
       .min(0, "Hourly rate must be non-negative")
       .optional(),
-    tags: z.array(z.string()).optional(),
     subjectIds: z.array(z.string()).max(30).optional(),
     skillIds: z.array(z.string()).max(30).optional(),
     headline: z.string().max(100, "Headline must be at most 100 characters").optional(),
@@ -57,7 +55,9 @@ export const getAllTutorProfilesValidationSchema = z.object({
     availableNow: z.string().optional(),
     page: z.string().optional(),
     limit: z.string().optional(),
-    sortBy: z.string().optional(),
+    sortBy: z
+      .enum(["totalRating", "totalCompletedBookings", "hourlyRate", "createdAt"])
+      .optional(),
     sortOrder: z.enum(["asc", "desc"]).optional(),
   }),
 });
